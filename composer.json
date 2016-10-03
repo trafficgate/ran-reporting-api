@@ -1,0 +1,44 @@
+{
+    "name": "linkshare/ran-reporting-api",
+    "description": "API wrapper for consuming RAN reporting APIs",
+    "type": "library",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/trafficgate/ran-reporting-api/issues",
+        "source": "https://github.com/trafficgate/ran-reporting-api"
+    },
+    "authors": [
+        {
+            "name": "Takuto Hayashi",
+            "email": "takuto.hayashi@rakuten.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "guzzlehttp/guzzle": "~6.0",
+        "illuminate/support": "~5.0",
+        "league/csv": "~8.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^1.12",
+        "fzaninotto/faker": "^1.6",
+        "phpunit/phpunit": "~5.5",
+        "psy/psysh": "~0.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Linkshare\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/TestCase.php"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    },
+    "minimum-stability": "stable"
+}
