@@ -99,4 +99,50 @@ class DownloaderTest extends TestCase
 
         $this->assertFileNotExists($sinkPath);
     }
+
+    public function testDownloadRetry()
+    {
+        $history      = [];
+        $responseBody = $this->createSampleReportStream();
+        $handler      = HandlerStack::create(new MockHandler([
+            new Response(403),
+            new Response(500),
+            new Response(200, [], $responseBody),
+        ]));
+        $handler->push(Middleware::history($history));
+
+        $downloader = new Downloader($this->report);
+        $downloader->download([
+            'handler'                => $handler,
+            'retry_attempts'         => 10,
+            'retry_delay_multiplier' => 5000,
+        ]);
+
+        $this->assertCount(3, $history);
+        $this->assertEquals($this->report->getUri(), $history[0]['request']->getUri());
+        $this->assertEquals($responseBody, $downloader->getResponse()->getBody());
+    }
+
+    /**
+     * @expectedException GuzzleHttp\Exception\RequestException
+     */
+    public function testDownloadRetryFail()
+    {
+        $history      = [];
+        $responseBody = $this->createSampleReportStream();
+        $handler      = HandlerStack::create(new MockHandler([
+            new Response(403),
+            new Response(500),
+            new Response(500),
+            new Response(500),
+            new Response(200, [], $responseBody),
+        ]));
+        $handler->push(Middleware::history($history));
+
+        $downloader = new Downloader($this->report);
+        $downloader->download([
+            'handler'        => $handler,
+            'retry_attempts' => 3,
+        ]);
+    }
 }
