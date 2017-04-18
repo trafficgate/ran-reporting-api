@@ -3,10 +3,14 @@
 namespace Linkshare\Api\RanReporting;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Middleware;
 
 class Downloader
 {
-    const DEFAULT_SINK_PREFIX = 'report-';
+    const DEFAULT_SINK_PREFIX            = 'report-';
+    const DEFAULT_RETRY_ATTEMPTS         = 1;
+    const DEFAULT_RETRY_DELAY_MULTIPLIER = 500; //ms
 
     /**
      * @var Report
@@ -45,12 +49,45 @@ class Downloader
     public function download(array $options = [])
     {
         $defaultOptions = [
-            'sink' => $this->sinkPath,
+            'sink'                   => $this->sinkPath,
+            'retry_attempts'         => self::DEFAULT_RETRY_ATTEMPTS,
+            'retry_delay_multiplier' => self::DEFAULT_RETRY_DELAY_MULTIPLIER,
         ];
+        $options = array_merge($defaultOptions, $options);
 
-        $client = new Client(array_merge($defaultOptions, $options));
+        $retryAttempts        = $options['retry_attempts'];
+        $retryDelayMultiplier = $options['retry_delay_multiplier'];
+        
+        // retry_attempts and retry_delay_multiplier are not GuzzleHttp options,
+        // so unset them to avoid any conflict
+        unset($options['retry_attempts']);
+        unset($options['retry_delay_multiplier']);
 
-        $this->response = $client->get($this->report->getUri());
+        $decider = function ($retries, $request, $response, $exception) use ($retryAttempts) {
+            if ($retries >= $retryAttempts) {
+                return false;
+            }
+
+            if (isset($exception) && $exception instanceof RequestException) {
+                return true;
+            }
+
+            if (isset($response) && $response->getStatusCode() != '200') {
+                return true;
+            }
+
+            return false;
+        };
+
+        $delay = function ($retries) use ($retryDelayMultiplier) {
+            return $retries * $retryDelayMultiplier;
+        };
+
+        $handler            = isset($options['handler']) ? $options['handler'] : \GuzzleHttp\choose_handler();
+        $retry              = Middleware::retry($decider, $delay);
+        $options['handler'] = $retry($handler);
+        $client             = new Client($options);
+        $this->response     = $client->get($this->report->getUri());
 
         return $this->response;
     }
