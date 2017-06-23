@@ -1,0 +1,22 @@
+language: php
+sudo: required
+php:
+- 5.6
+- 7.0
+- 7.1
+- hhvm
+matrix:
+  allow_failures:
+  - php: 7.1
+  - php: hhvm
+  fast_finish: true
+before_install:
+- travis_retry composer self-update
+install:
+- travis_retry composer update --prefer-dist --no-interaction --prefer-stable --no-suggest
+script:
+- vendor/bin/phpunit
+notifications:
+  hipchat:
+    rooms:
+      secure: EAPHDjwPqh4Dm12vFrj7mY7voWNrZO3tJB2xkIGPs4T34RaKHyrE9XGcN3tZynEkrZMzdnYAMK0LFjA2P9540DLE3CnZBKusz7pERq2fUF/fuoJUEZ+/mh0pm8vABsoV2W4ug9YL0HZtGc/S/mP5wCwS4g4nHFTpEvyh57YcrvSvMoy1aLK00MF0lAUGLo/3BT+h2MEhFpA847C8D+RRS0rRJzIEwYNehOL2lTqqflLOtPjgy5scSCp6WfRqcdSu3+N+YBskQu6eWK9GpAHr2GTCe5fYXe8qWHsn8lqMqGVEJkPR3Chrm3OE3Qw3G2E9zyZDWXtDvP2V5KpyByz2BLSl1jnarx2OCVc0l+586Uw2LCvMNOlgYEy8WlbRbWmRlYnA6VqJ41DRgTbnF82dAtwfFCw+DqwtOzltoTvQyi4TTOKnyGReqmfpWkT1lxsgC+tU1nQ5JBkg7l9hzJ4tA9ArEplnW835Tgcu3sGQVJS35iDPKKOYoGH0ZbGPvjosSzCKPzZJWsFPvwo2ltGXU+y0Dw78T/WVL3sGu3B33v26srHqumOFgFUt6kf5rV/o0uI9oFhAqFwV9Pu0LV0r5rA0Fk08cXyXVOcv+nyl35DvzNJXUpWSLosL9CdCgrbm/vf3eYPu4JcnndEVHazuHhFOI1iQi7w0xxPAheNl4Is=
