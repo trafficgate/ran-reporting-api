@@ -27,13 +27,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Linkshare\\": "src/"
+            "Linkshare\\Api\\RanReporting\\": "src/"
         }
     },
     "autoload-dev": {
-        "classmap": [
-            "tests/TestCase.php"
-        ]
+        "psr-4": {
+            "Linkshare\\Api\\RanReporting\\": "tests/"
+        }
     },
     "extra": {
         "branch-alias": {

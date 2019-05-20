@@ -1,6 +1,7 @@
 <?php
 
-use Linkshare\Api\RanReporting\Parser;
+namespace Linkshare\Api\RanReporting;
+
 use Linkshare\Api\RanReporting\SignatureOrders\TransactionFactory;
 
 class ParserTest extends TestCase

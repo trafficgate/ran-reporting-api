@@ -1,12 +1,11 @@
 <?php
 
+namespace Linkshare\Api\RanReporting;
+
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
-use Linkshare\Api\RanReporting\Downloader;
-use Linkshare\Api\RanReporting\Report;
-use Linkshare\Api\RanReporting\SignatureOrders;
 
 class DownloaderTest extends TestCase
 {

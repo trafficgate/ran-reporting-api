@@ -1,8 +1,11 @@
 <?php
 
-use GuzzleHttp\Psr7\Stream;
+namespace Linkshare\Api\RanReporting;
 
-abstract class TestCase extends PHPUnit_Framework_TestCase
+use GuzzleHttp\Psr7\Stream;
+use PHPUnit_Framework_TestCase as BaseTestCase;
+
+abstract class TestCase extends BaseTestCase
 {
     const PATH_TO_SAMPLE_REPORT = __DIR__.'/data/signature-orders.csv';
 

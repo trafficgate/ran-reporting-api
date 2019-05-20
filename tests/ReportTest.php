@@ -1,6 +1,6 @@
 <?php
 
-use Linkshare\Api\RanReporting\Report;
+namespace Linkshare\Api\RanReporting;
 
 class ReportTest extends TestCase
 {
