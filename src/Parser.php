@@ -27,6 +27,20 @@ class Parser
      */
     protected $recordFactory;
 
+    protected function __construct(
+        string $source,
+        string $sourceType,
+        ?RecordFactory $recordFactory = null
+    ) {
+        if (! isset($recordFactory)) {
+            $recordFactory = new ArrayFactory();
+        }
+
+        $this->source        = $source;
+        $this->sourceType    = $sourceType;
+        $this->recordFactory = $recordFactory;
+    }
+
     /**
      * @param ResponseInterface $response
      */
@@ -52,20 +66,6 @@ class Parser
         ?RecordFactory $recordFactory = null
     ): Parser {
         return new static($path, self::SOURCE_PATH, $recordFactory);
-    }
-
-    protected function __construct(
-        string $source,
-        string $sourceType,
-        ?RecordFactory $recordFactory = null
-    ) {
-        if (! isset($recordFactory)) {
-            $recordFactory = new ArrayFactory();
-        }
-
-        $this->source        = $source;
-        $this->sourceType    = $sourceType;
-        $this->recordFactory = $recordFactory;
     }
 
     public function getHeader()
