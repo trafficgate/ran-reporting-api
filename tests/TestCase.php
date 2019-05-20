@@ -3,7 +3,7 @@
 namespace Linkshare\Api\RanReporting;
 
 use GuzzleHttp\Psr7\Stream;
-use PHPUnit_Framework_TestCase as BaseTestCase;
+use PHPUnit\Framework\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
