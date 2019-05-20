@@ -74,7 +74,7 @@ class Parser
         $csvReader  = $this->createCsvReader();
         $sourceFile = $this->createFileObject();
 
-        foreach ($csvReader->fetch() as $offset => $row) {
+        foreach ($csvReader->getRecords() as $offset => $row) {
             $line = $sourceFile->fgets();
             $line = $this->stripNewline($line);
 
@@ -96,8 +96,6 @@ class Parser
         } elseif ($this->sourceType === self::SOURCE_PATH) {
             $csvReader = CsvReader::createFromPath($this->source);
         }
-
-        $csvReader->stripBom(true);
 
         return $csvReader;
     }
