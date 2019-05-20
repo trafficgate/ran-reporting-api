@@ -17,18 +17,69 @@ class Transaction
     const PROCESS_DATE     = 10;
     const PROCESS_TIME     = 11;
 
+    /**
+     * @var string
+     */
     protected $memberId;
+
+    /**
+     * @var string
+     */
     protected $mid;
+
+    /**
+     * @var string
+     */
     protected $advertiserName;
+
+    /**
+     * @var string
+     */
     protected $orderId;
+
+    /**
+     * @var string
+     */
     protected $transactionDate;
+
+    /**
+     * @var string
+     */
     protected $transactionTime;
+
+    /**
+     * @var string
+     */
     protected $sku;
+
+    /**
+     * @var string
+     */
     protected $sales;
+
+    /**
+     * @var string
+     */
     protected $numberOfItems;
+
+    /**
+     * @var string
+     */
     protected $totalCommission;
+
+    /**
+     * @var string
+     */
     protected $processDate;
+
+    /**
+     * @var string
+     */
     protected $processTime;
+
+    /**
+     * @var string
+     */
     protected $originalString;
 
     public function __construct(array $data, string $originalString)
@@ -48,67 +99,67 @@ class Transaction
         $this->originalString  = $originalString;
     }
 
-    public function memberId()
+    public function memberId(): string
     {
         return $this->memberId;
     }
 
-    public function mid()
+    public function mid(): string
     {
         return $this->mid;
     }
 
-    public function advertiserName()
+    public function advertiserName(): string
     {
         return $this->advertiserName;
     }
 
-    public function orderId()
+    public function orderId(): string
     {
         return $this->orderId;
     }
 
-    public function transactionDate()
+    public function transactionDate(): string
     {
         return $this->transactionDate;
     }
 
-    public function transactionTime()
+    public function transactionTime(): string
     {
         return $this->transactionTime;
     }
 
-    public function sku()
+    public function sku(): string
     {
         return $this->sku;
     }
 
-    public function sales()
+    public function sales(): string
     {
         return $this->sales;
     }
 
-    public function numberOfItems()
+    public function numberOfItems(): string
     {
         return $this->numberOfItems;
     }
 
-    public function totalCommission()
+    public function totalCommission(): string
     {
         return $this->totalCommission;
     }
 
-    public function processDate()
+    public function processDate(): string
     {
         return $this->processDate;
     }
 
-    public function processTime()
+    public function processTime(): string
     {
         return $this->processTime;
     }
 
-    public function originalString()
+    public function originalString(): string
     {
         return $this->originalString;
     }

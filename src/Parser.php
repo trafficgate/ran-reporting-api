@@ -3,6 +3,7 @@
 namespace Linkshare\Api\RanReporting;
 
 use League\Csv\Reader as CsvReader;
+use Psr\Http\Message\ResponseInterface;
 use SplFileObject;
 use SplTempFileObject;
 
@@ -11,38 +12,25 @@ class Parser
     const SOURCE_STRING = 'string';
     const SOURCE_PATH   = 'path';
 
+    /**
+     * @var string
+     */
     protected $source;
+
+    /**
+     * @var string
+     */
     protected $sourceType;
+
+    /**
+     * @var RecordFactory
+     */
     protected $recordFactory;
 
-    public static function createFromResponse(
-        $response,
-        RecordFactory $recordFactory = null
-    ) {
-        return static::createFromString(
-            $response->getBody(),
-            $recordFactory
-        );
-    }
-
-    public static function createFromString(
-        $string,
-        RecordFactory $recordFactory = null
-    ) {
-        return new static($string, self::SOURCE_STRING, $recordFactory);
-    }
-
-    public static function createFromPath(
-        $path,
-        RecordFactory $recordFactory = null
-    ) {
-        return new static($path, self::SOURCE_PATH, $recordFactory);
-    }
-
     protected function __construct(
-        $source,
-        $sourceType,
-        RecordFactory $recordFactory = null
+        string $source,
+        string $sourceType,
+        ?RecordFactory $recordFactory = null
     ) {
         if (! isset($recordFactory)) {
             $recordFactory = new ArrayFactory();
@@ -51,6 +39,33 @@ class Parser
         $this->source        = $source;
         $this->sourceType    = $sourceType;
         $this->recordFactory = $recordFactory;
+    }
+
+    /**
+     * @param ResponseInterface $response
+     */
+    public static function createFromResponse(
+        ResponseInterface $response,
+        ?RecordFactory $recordFactory = null
+    ): Parser {
+        return static::createFromString(
+            $response->getBody(),
+            $recordFactory
+        );
+    }
+
+    public static function createFromString(
+        string $string,
+        ?RecordFactory $recordFactory = null
+    ): Parser {
+        return new static($string, self::SOURCE_STRING, $recordFactory);
+    }
+
+    public static function createFromPath(
+        string $path,
+        ?RecordFactory $recordFactory = null
+    ): Parser {
+        return new static($path, self::SOURCE_PATH, $recordFactory);
     }
 
     public function getHeader()
@@ -74,7 +89,7 @@ class Parser
         $csvReader  = $this->createCsvReader();
         $sourceFile = $this->createFileObject();
 
-        foreach ($csvReader->fetch() as $offset => $row) {
+        foreach ($csvReader->getRecords() as $offset => $row) {
             $line = $sourceFile->fgets();
             $line = $this->stripNewline($line);
 
@@ -87,7 +102,7 @@ class Parser
         }
     }
 
-    protected function createCsvReader()
+    protected function createCsvReader(): CsvReader
     {
         $csvReader = null;
 
@@ -97,12 +112,10 @@ class Parser
             $csvReader = CsvReader::createFromPath($this->source);
         }
 
-        $csvReader->stripBom(true);
-
         return $csvReader;
     }
 
-    protected function createFileObject()
+    protected function createFileObject(): SplFileObject
     {
         $sourceFile = null;
 
@@ -118,12 +131,12 @@ class Parser
         return $sourceFile;
     }
 
-    protected function stripNewline(string $line)
+    protected function stripNewline(string $line): string
     {
         return rtrim($line, "\n\r");
     }
 
-    protected function stripBom(string $line, string $bom)
+    protected function stripBom(string $line, string $bom): string
     {
         return mb_substr($line, mb_strlen($bom));
     }

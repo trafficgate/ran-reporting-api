@@ -1,10 +1,10 @@
 <?php
 
-use Linkshare\Api\RanReporting\Report;
+namespace Linkshare\Api\RanReporting;
 
 class ReportTest extends TestCase
 {
-    public function testConstructor()
+    public function testConstructor(): void
     {
         $report = new Report([
             'language'       => Report::LANGUAGE_EN,
@@ -24,7 +24,7 @@ class ReportTest extends TestCase
         );
     }
 
-    public function testSetters()
+    public function testSetters(): void
     {
         $report = new Report();
 
@@ -44,7 +44,7 @@ class ReportTest extends TestCase
         );
     }
 
-    public function testMixConstructorAndSetters()
+    public function testMixConstructorAndSetters(): void
     {
         $report = new Report([
             'language'       => Report::LANGUAGE_EN,
