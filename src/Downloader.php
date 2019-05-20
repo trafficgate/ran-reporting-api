@@ -3,6 +3,7 @@
 namespace Linkshare\Api\RanReporting;
 
 use GuzzleHttp\Client;
+use Psr\Http\Message\ResponseInterface;
 
 class Downloader
 {
@@ -19,13 +20,13 @@ class Downloader
     protected $sinkPath = null;
 
     /**
-     * @var Psr\Http\Message\ResponseInterface
+     * @var ResponseInterface
      */
     protected $response;
 
     public function __construct(
         Report $report,
-        string $sinkDir = null,
+        ?string $sinkDir = null,
         string $sinkPrefix = self::DEFAULT_SINK_PREFIX
     ) {
         $this->report = $report;
@@ -42,7 +43,7 @@ class Downloader
         }
     }
 
-    public function download(array $options = [])
+    public function download(array $options = []): ResponseInterface
     {
         $defaultOptions = [
             'sink' => $this->sinkPath,
@@ -55,12 +56,12 @@ class Downloader
         return $this->response;
     }
 
-    public function getResponse()
+    public function getResponse(): ResponseInterface
     {
         return $this->response;
     }
 
-    public function getSinkPath()
+    public function getSinkPath(): string
     {
         return $this->sinkPath;
     }

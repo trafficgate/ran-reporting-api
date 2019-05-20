@@ -9,7 +9,7 @@ abstract class TestCase extends BaseTestCase
 {
     const PATH_TO_SAMPLE_REPORT = __DIR__.'/data/signature-orders.csv';
 
-    protected function createSampleReportStream()
+    protected function createSampleReportStream(): Stream
     {
         return new Stream(fopen(self::PATH_TO_SAMPLE_REPORT, 'r'));
     }

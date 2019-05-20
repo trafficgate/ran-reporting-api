@@ -36,14 +36,49 @@ class Report
         'token',
     ];
 
+    /**
+     * @var string
+     */
     protected $language;
+
+    /**
+     * @var string
+     */
     protected $reportName;
+
+    /**
+     * @var string
+     */
     protected $startDate;
+
+    /**
+     * @var string
+     */
     protected $endDate;
+
+    /**
+     * @var string
+     */
     protected $includeSummary = self::INCLUDE_SUMMARY_NO;
+
+    /**
+     * @var int
+     */
     protected $network;
+
+    /**
+     * @var string
+     */
     protected $timezone;
+
+    /**
+     * @var string
+     */
     protected $dateType;
+
+    /**
+     * @var string
+     */
     protected $token;
 
     public function __construct(array $props = [])
@@ -57,60 +92,60 @@ class Report
         }
     }
 
-    public function getLanguage()
+    public function getLanguage(): string
     {
         return $this->language;
     }
 
-    public function setLanguage(string $value)
+    public function setLanguage(string $value): Report
     {
         $this->language = $value;
 
         return $this;
     }
 
-    public function getReportName()
+    public function getReportName(): string
     {
         return $this->reportName;
     }
 
-    public function setReportName(string $value)
+    public function setReportName(string $value): Report
     {
         $this->reportName = $value;
 
         return $this;
     }
 
-    public function getStartDate()
+    public function getStartDate(): string
     {
         return $this->startDate;
     }
 
-    public function setStartDate(string $value)
+    public function setStartDate(string $value): Report
     {
         $this->startDate = $value;
 
         return $this;
     }
 
-    public function getEndDate()
+    public function getEndDate(): string
     {
         return $this->endDate;
     }
 
-    public function setEndDate(string $value)
+    public function setEndDate(string $value): Report
     {
         $this->endDate = $value;
 
         return $this;
     }
 
-    public function getIncludeSummary()
+    public function getIncludeSummary(): string
     {
         return $this->includeSummary;
     }
 
-    public function setIncludeSummary(string $value)
+    public function setIncludeSummary(string $value): Report
     {
         $validValues = [
             self::INCLUDE_SUMMARY_YES,
@@ -128,36 +163,36 @@ class Report
         return $this;
     }
 
-    public function getNetwork()
+    public function getNetwork(): int
     {
         return $this->network;
     }
 
-    public function setNetwork(int $value)
+    public function setNetwork(int $value): Report
     {
         $this->network = $value;
 
         return $this;
     }
 
-    public function getTimezone()
+    public function getTimezone(): string
     {
         return $this->timezone;
     }
 
-    public function setTimezone(string $value)
+    public function setTimezone(string $value): Report
     {
         $this->timezone = $value;
 
         return $this;
     }
 
-    public function getDateType()
+    public function getDateType(): string
     {
         return $this->dateType;
     }
 
-    public function setDateType(string $value)
+    public function setDateType(string $value): Report
     {
         $validValues = [
             self::DATE_TYPE_TRANSACTION,
@@ -175,19 +210,19 @@ class Report
         return $this;
     }
 
-    public function getToken()
+    public function getToken(): string
     {
         return $this->token;
     }
 
-    public function setToken(string $value)
+    public function setToken(string $value): Report
     {
         $this->token = $value;
 
         return $this;
     }
 
-    public function getUri()
+    public function getUri(): string
     {
         foreach (self::VALID_PROPERTY_NAMES as $name) {
             if (! isset($this->$name)) {

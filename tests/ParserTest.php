@@ -6,7 +6,7 @@ use Linkshare\Api\RanReporting\SignatureOrders\TransactionFactory;
 
 class ParserTest extends TestCase
 {
-    public function testParseToArray()
+    public function testParseToArray(): void
     {
         $responseBody    = $this->createSampleReportStream();
         $parser          = Parser::createFromString($responseBody);
@@ -29,7 +29,7 @@ class ParserTest extends TestCase
         $this->assertEquals(1532, $numberOfRecords);
     }
 
-    public function testParseToTransaction()
+    public function testParseToTransaction(): void
     {
         $responseBody    = $this->createSampleReportStream();
         $parser          = Parser::createFromString($responseBody, new TransactionFactory());
@@ -57,7 +57,7 @@ class ParserTest extends TestCase
         );
     }
 
-    public function testGetHeaderAsArray()
+    public function testGetHeaderAsArray(): void
     {
         $responseBody = $this->createSampleReportStream();
         $parser       = Parser::createFromString($responseBody);
@@ -77,7 +77,7 @@ class ParserTest extends TestCase
         $this->assertEquals('Process Time', $header[11]);
     }
 
-    public function testGetHeaderAsTransaction()
+    public function testGetHeaderAsTransaction(): void
     {
         $responseBody = $this->createSampleReportStream();
         $parser       = Parser::createFromString($responseBody, new TransactionFactory());
@@ -102,7 +102,7 @@ class ParserTest extends TestCase
         );
     }
 
-    public function testCreateParserFromPath()
+    public function testCreateParserFromPath(): void
     {
         $parser = Parser::createFromPath(
             self::PATH_TO_SAMPLE_REPORT,
