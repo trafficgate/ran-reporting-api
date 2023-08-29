@@ -30,7 +30,9 @@ $config
         'php_unit_internal_class' => false,
         'php_unit_test_class_requires_covers' => false,
         'phpdoc_line_span' => ['const' => 'single'],
-        'phpdoc_separation' => ['skip_unlisted_annotations' => true],
+        // TODO after upgrading to v3.14+
+        // 'phpdoc_separation' => ['skip_unlisted_annotations' => true],
+        'phpdoc_separation' => true,
         'phpdoc_to_comment' => [
             'ignored_tags' => [
                 // Used for Swagger documentation
