@@ -23,7 +23,7 @@
         "friendsofphp/php-cs-fixer": "^3.0",
         "fzaninotto/faker": "^1.6",
         "phpunit/phpunit": "~5.5",
-        "psy/psysh": "~0.7"
+        "psy/psysh": "^0.11.20"
     },
     "autoload": {
         "psr-4": {
