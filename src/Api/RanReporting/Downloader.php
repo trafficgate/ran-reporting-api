@@ -6,7 +6,7 @@ use GuzzleHttp\Client;
 
 class Downloader
 {
-    const DEFAULT_SINK_PREFIX = 'report-';
+    public const DEFAULT_SINK_PREFIX = 'report-';
 
     /**
      * @var Report
@@ -16,7 +16,7 @@ class Downloader
     /**
      * @var string
      */
-    protected $sinkPath = null;
+    protected $sinkPath;
 
     /**
      * @var Psr\Http\Message\ResponseInterface
@@ -25,7 +25,7 @@ class Downloader
 
     public function __construct(
         Report $report,
-        string $sinkDir = null,
+        ?string $sinkDir = null,
         string $sinkPrefix = self::DEFAULT_SINK_PREFIX
     ) {
         $this->report = $report;

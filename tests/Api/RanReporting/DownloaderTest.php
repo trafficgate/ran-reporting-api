@@ -10,7 +10,7 @@ use Linkshare\Api\RanReporting\SignatureOrders;
 
 class DownloaderTest extends TestCase
 {
-    const SINK_DIR = __DIR__.'/../../tmp';
+    public const SINK_DIR = __DIR__ . '/../../tmp';
 
     protected $report;
     protected $history;

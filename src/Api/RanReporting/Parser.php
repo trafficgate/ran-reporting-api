@@ -8,16 +8,30 @@ use SplTempFileObject;
 
 class Parser
 {
-    const SOURCE_STRING = 'string';
-    const SOURCE_PATH   = 'path';
+    public const SOURCE_STRING = 'string';
+    public const SOURCE_PATH   = 'path';
 
     protected $source;
     protected $sourceType;
     protected $recordFactory;
 
+    protected function __construct(
+        $source,
+        $sourceType,
+        ?RecordFactory $recordFactory = null
+    ) {
+        if (! isset($recordFactory)) {
+            $recordFactory = new ArrayFactory();
+        }
+
+        $this->source        = $source;
+        $this->sourceType    = $sourceType;
+        $this->recordFactory = $recordFactory;
+    }
+
     public static function createFromResponse(
         $response,
-        RecordFactory $recordFactory = null
+        ?RecordFactory $recordFactory = null
     ) {
         return static::createFromString(
             $response->getBody(),
@@ -27,30 +41,16 @@ class Parser
 
     public static function createFromString(
         $string,
-        RecordFactory $recordFactory = null
+        ?RecordFactory $recordFactory = null
     ) {
         return new static($string, self::SOURCE_STRING, $recordFactory);
     }
 
     public static function createFromPath(
         $path,
-        RecordFactory $recordFactory = null
+        ?RecordFactory $recordFactory = null
     ) {
         return new static($path, self::SOURCE_PATH, $recordFactory);
-    }
-
-    protected function __construct(
-        $source,
-        $sourceType,
-        RecordFactory $recordFactory = null
-    ) {
-        if (! isset($recordFactory)) {
-            $recordFactory = new ArrayFactory();
-        }
-
-        $this->source        = $source;
-        $this->sourceType    = $sourceType;
-        $this->recordFactory = $recordFactory;
     }
 
     public function getHeader()
