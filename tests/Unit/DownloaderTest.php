@@ -2,8 +2,8 @@
 
 namespace Linkshare\Api\RanReporting\Tests\Unit;
 
-use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use Linkshare\Api\RanReporting\Downloader;
