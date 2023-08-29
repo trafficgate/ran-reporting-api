@@ -30,9 +30,9 @@
         }
     },
     "autoload-dev": {
-        "classmap": [
-            "tests/TestCase.php"
-        ]
+        "psr-4": {
+            "Linkshare\\Api\\RanReporting\\Tests\\": "tests/"
+        }
     },
     "extra": {
         "branch-alias": {
