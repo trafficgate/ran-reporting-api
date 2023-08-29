@@ -26,7 +26,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Linkshare\\": "src/"
+            "Linkshare\\Api\\RanReporting\\": "src/"
         }
     },
     "autoload-dev": {
