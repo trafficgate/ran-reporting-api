@@ -3,7 +3,6 @@
 namespace Linkshare\Api\RanReporting;
 
 use BadMethodCallException;
-use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class Report
@@ -50,7 +49,7 @@ class Report
     {
         foreach (self::VALID_PROPERTY_NAMES as $name) {
             if (isset($props[$name])) {
-                $method = 'set' . Str::studly($name);
+                $method = 'set' . ucfirst($name);
 
                 $this->{$method}($props[$name]);
             }
