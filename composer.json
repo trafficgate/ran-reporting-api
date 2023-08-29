@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "php": ">=7.2",
+        "php": "^7.2|^8.0",
         "guzzlehttp/guzzle": "^6.1.1|^7.0",
         "league/csv": "^9.4"
     },
