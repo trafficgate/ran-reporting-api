@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use Faker\Factory as FakerFactory;
 use League\Csv\Writer as CsvWriter;
@@ -10,7 +10,7 @@ function enclose($item)
     return '"' . $item . '"';
 }
 
-$outputFilePath = __DIR__ . '/signature-orders.csv';
+$outputFilePath = __DIR__ . '/../tests/data/signature-orders.csv';
 $header         = 'Member ID (U1),MID,Advertiser Name,Order ID,Transaction Date,Transaction Time,SKU,Sales,# of Items,Total Commission,Process Date,Process Time';
 $newline        = "\r\n";
 
