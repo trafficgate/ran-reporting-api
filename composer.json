@@ -21,7 +21,7 @@
     "require-dev": {
         "fakerphp/faker": "^1.9",
         "friendsofphp/php-cs-fixer": "^3.0",
-        "phpunit/phpunit": "^8.0",
+        "phpunit/phpunit": "^8.5.14",
         "psy/psysh": "^0.11.20"
     },
     "autoload": {
