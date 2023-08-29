@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     - fakerphp/faker (`^1.6` => `^1.9`)
         - Replaces abandoned `fzaninotto/faker`
     - friendsofphp/php-cs-fixer (`^1.12` => `^3.0`)
-    - phpunit/phpunit (`~5.5` => `^8.5.14`)
+    - phpunit/phpunit (`~5.5` => `^8.5.14|^9.0`)
     - psy/psysh (`~0.7` => `^0.11.20`)
 
 ### Removed
