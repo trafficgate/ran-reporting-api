@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.0.0] - 2023-09-07
+
 ### Added
 
 - Github Actions workflows.
@@ -37,6 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Please fill me out.
 
-[Unreleased]: https://github.com/trafficgate/ran-reporting-api/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/trafficgate/ran-reporting-api/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/trafficgate/ran-reporting-api/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/trafficgate/ran-reporting-api/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/trafficgate/ran-reporting-api/releases/tag/v1.0.0
