@@ -3,28 +3,27 @@
 namespace Linkshare\Api\RanReporting;
 
 use BadMethodCallException;
-use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class Report
 {
-    const BASE_URI = 'https://ran-reporting.rakutenmarketing.com/{language}/reports/{reportName}/filters';
+    public const BASE_URI = 'https://ran-reporting.rakutenmarketing.com/{language}/reports/{reportName}/filters';
 
-    const LANGUAGE_EN = 'en';
-    const LANGUAGE_JA = 'ja';
+    public const LANGUAGE_EN = 'en';
+    public const LANGUAGE_JA = 'ja';
 
-    const INCLUDE_SUMMARY_YES = 'Y';
-    const INCLUDE_SUMMARY_NO  = 'N';
+    public const INCLUDE_SUMMARY_YES = 'Y';
+    public const INCLUDE_SUMMARY_NO  = 'N';
 
-    const NETWORK_US    = 1;
-    const NETWORK_JAPAN = 11;
+    public const NETWORK_US    = 1;
+    public const NETWORK_JAPAN = 11;
 
-    const TIMEZONE_GMT = 'GMT';
+    public const TIMEZONE_GMT = 'GMT';
 
-    const DATE_TYPE_TRANSACTION = 'transaction';
-    const DATE_TYPE_PROCESS     = 'process';
+    public const DATE_TYPE_TRANSACTION = 'transaction';
+    public const DATE_TYPE_PROCESS     = 'process';
 
-    const VALID_PROPERTY_NAMES = [
+    public const VALID_PROPERTY_NAMES = [
         'language',
         'reportName',
         'startDate',
@@ -50,7 +49,7 @@ class Report
     {
         foreach (self::VALID_PROPERTY_NAMES as $name) {
             if (isset($props[$name])) {
-                $method = 'set'.Str::studly($name);
+                $method = 'set' . ucfirst($name);
 
                 $this->{$method}($props[$name]);
             }
@@ -119,7 +118,7 @@ class Report
 
         if (! in_array($value, $validValues, true)) {
             throw new InvalidArgumentException(
-                $value.' is not a valid value for includeSummary.'
+                $value . ' is not a valid value for includeSummary.'
             );
         }
 
@@ -166,7 +165,7 @@ class Report
 
         if (! in_array($value, $validValues, true)) {
             throw new InvalidArgumentException(
-                $value.' is not a valid value for dateType.'
+                $value . ' is not a valid value for dateType.'
             );
         }
 
@@ -190,8 +189,8 @@ class Report
     public function getUri()
     {
         foreach (self::VALID_PROPERTY_NAMES as $name) {
-            if (! isset($this->$name)) {
-                throw new BadMethodCallException($name.' is not set.');
+            if (! isset($this->{$name})) {
+                throw new BadMethodCallException($name . ' is not set.');
             }
         }
 
@@ -211,6 +210,6 @@ class Report
             'token'           => $this->token,
         ]);
 
-        return $uri.'?'.$queryString;
+        return $uri . '?' . $queryString;
     }
 }

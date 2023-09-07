@@ -1,5 +1,7 @@
 <?php
 
+namespace Linkshare\Api\RanReporting\Tests\Unit;
+
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -7,17 +9,18 @@ use GuzzleHttp\Psr7\Response;
 use Linkshare\Api\RanReporting\Downloader;
 use Linkshare\Api\RanReporting\Report;
 use Linkshare\Api\RanReporting\SignatureOrders;
+use Linkshare\Api\RanReporting\Tests\TestCase;
 
 class DownloaderTest extends TestCase
 {
-    const SINK_DIR = __DIR__.'/../../tmp';
+    public const SINK_DIR = __DIR__ . '/../../tmp';
 
     protected $report;
     protected $history;
     protected $mockResponseBody;
     protected $mockHandler;
 
-    public function setUp()
+    public function setUp(): void
     {
         if (! file_exists(self::SINK_DIR)) {
             mkdir(self::SINK_DIR, 0777, true);
@@ -40,7 +43,7 @@ class DownloaderTest extends TestCase
         $this->mockHandler->push(Middleware::history($this->history));
     }
 
-    public function testDownload()
+    public function testDownload(): void
     {
         $downloader = new Downloader($this->report);
         $downloader->download([
@@ -58,7 +61,7 @@ class DownloaderTest extends TestCase
         );
     }
 
-    public function testDownloadWithSinkDir()
+    public function testDownloadWithSinkDir(): void
     {
         $downloader = new Downloader($this->report, self::SINK_DIR);
         $downloader->download([
@@ -71,7 +74,7 @@ class DownloaderTest extends TestCase
         $this->assertFileEquals(self::PATH_TO_SAMPLE_REPORT, $sinkPath);
     }
 
-    public function testDownloadWithSinkPrefix()
+    public function testDownloadWithSinkPrefix(): void
     {
         $downloader = new Downloader(
             $this->report,
@@ -88,7 +91,7 @@ class DownloaderTest extends TestCase
         $this->assertFileEquals(self::PATH_TO_SAMPLE_REPORT, $sinkPath);
     }
 
-    public function testSinkFileIsDeleted()
+    public function testSinkFileIsDeleted(): void
     {
         $downloader = new Downloader($this->report, self::SINK_DIR);
         $sinkPath   = $downloader->getSinkPath();

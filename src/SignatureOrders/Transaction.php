@@ -4,18 +4,18 @@ namespace Linkshare\Api\RanReporting\SignatureOrders;
 
 class Transaction
 {
-    const MEMBER_ID        = 0;
-    const MID              = 1;
-    const ADVERTISER_NAME  = 2;
-    const ORDER_ID         = 3;
-    const TRANSACTION_DATE = 4;
-    const TRANSACTION_TIME = 5;
-    const SKU              = 6;
-    const SALES            = 7;
-    const NUMBER_OF_ITEMS  = 8;
-    const TOTAL_COMMISSION = 9;
-    const PROCESS_DATE     = 10;
-    const PROCESS_TIME     = 11;
+    public const MEMBER_ID        = 0;
+    public const MID              = 1;
+    public const ADVERTISER_NAME  = 2;
+    public const ORDER_ID         = 3;
+    public const TRANSACTION_DATE = 4;
+    public const TRANSACTION_TIME = 5;
+    public const SKU              = 6;
+    public const SALES            = 7;
+    public const NUMBER_OF_ITEMS  = 8;
+    public const TOTAL_COMMISSION = 9;
+    public const PROCESS_DATE     = 10;
+    public const PROCESS_TIME     = 11;
 
     protected $memberId;
     protected $mid;
