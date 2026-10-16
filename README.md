@@ -11,7 +11,6 @@ This library helps you:
 ## Requirements
 
 - PHP 8.2 or later (tested through 8.5)
-- `ext-mbstring`
 - [guzzlehttp/guzzle](https://github.com/guzzle/guzzle) `^7.8`
 - [league/csv](https://csv.thephpleague.com/) `^9.27`
 
@@ -153,7 +152,7 @@ foreach ($parser->parse() as $record) {
 }
 ```
 
-A leading UTF-8 byte order mark is handled for you.
+A leading UTF-8 byte order mark is handled for you. Parsing follows RFC 4180: a quote inside a quoted field is written as two quotes, a backslash is an ordinary character, quoted fields may contain line breaks, and blank lines are skipped. A quote only opens a quoted field at the start of a field, so a stray quote elsewhere, as in `Pipes 5" Inc`, is ordinary text.
 
 #### Record formats
 
@@ -179,11 +178,11 @@ foreach ($parser->parse() as $transaction) {
     $transaction->totalCommission();
     $transaction->processDate();
     $transaction->processTime();
-    $transaction->originalString(); // the raw CSV line
+    $transaction->originalString(); // the source text of the whole record, without line ending
 }
 ```
 
-All values are returned as strings, exactly as they appear in the CSV.
+All values are returned as strings, exactly as they appear in the CSV. A row with fewer than 12 columns (an error page returned with a 200 status, for example) throws an `InvalidArgumentException` that says how many columns it found. The message never contains the row, which may hold member data.
 
 To support another report, implement `Linkshare\Api\RanReporting\RecordFactory`. It receives the parsed row and the raw line for every record, including the header.
 
@@ -203,11 +202,16 @@ class MyFactory implements RecordFactory
 
 ```bash
 composer install
-vendor/bin/phpunit
-vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php
+composer test                      # PHPUnit
+composer analyse                   # PHPStan: src at the strictest level, tests at level 8
+composer cs                        # php-cs-fixer, check only
+vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php   # apply style fixes
+composer test-coverage             # needs the pcov or Xdebug extension
 ```
 
-The tests use a generated sample report (`tests/data/signature-orders.csv`) that contains fake data only. It can be regenerated with `php scripts/fake_report_generator.php`.
+CI runs the tests on PHP 8.2 to 8.5, runs PHPStan, and reports coverage measured with [pcov](https://github.com/krakjoe/pcov) in the job summary.
+
+The tests include integration tests that download from PHP's built-in web server on `127.0.0.1` (`tests/Integration/`), so they need no network access. They use a generated sample report (`tests/data/signature-orders.csv`) that contains fake data only. It can be regenerated with `php scripts/fake_report_generator.php`.
 
 See the [CHANGELOG](CHANGELOG.md) for release notes.
 

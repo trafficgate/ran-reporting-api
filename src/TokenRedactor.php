@@ -11,7 +11,9 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Exception\TooManyRedirectsException;
+use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use RuntimeException;
 use Throwable;
@@ -59,8 +61,39 @@ final class TokenRedactor
     }
 
     /**
+     * Returns a copy of the response with the token removed from its headers
+     * and body, in case the server echoes the request back.
+     */
+    public function redactResponse(ResponseInterface $response): ResponseInterface
+    {
+        $headers = [];
+
+        foreach ($response->getHeaders() as $name => $values) {
+            $headers[$name] = array_map($this->redactString(...), $values);
+        }
+
+        $body = $this->redactString((string) $response->getBody());
+
+        if ($response->hasHeader('Content-Length')) {
+            $headers['Content-Length'] = [(string) strlen($body)];
+        }
+
+        return new Response(
+            $response->getStatusCode(),
+            $headers,
+            $body,
+            $response->getProtocolVersion(),
+            $response->getReasonPhrase()
+        );
+    }
+
+    /**
      * Strings are redacted and arrays are walked. Anything else (curl handles,
      * objects) is dropped because it cannot be inspected safely.
+     *
+     * @param array<array-key, mixed> $context
+     *
+     * @return array<array-key, mixed>
      */
     public function redactContext(array $context): array
     {
@@ -83,7 +116,7 @@ final class TokenRedactor
      * Returns an exception that is safe to throw to the caller.
      *
      * Guzzle request and connection exceptions are rebuilt as the same class,
-     * without the previous exception. Any other exception is returned as it is,
+     * with a redacted response and without the previous exception. Any other exception is returned as it is,
      * unless it mentions the token, in which case it becomes a RuntimeException.
      */
     public function redact(Throwable $exception): Throwable
@@ -130,7 +163,9 @@ final class TokenRedactor
             return new $class(
                 $message,
                 $this->redactRequest($exception->getRequest()),
-                $exception->getResponse(),
+                $exception->getResponse() === null
+                    ? null
+                    : $this->redactResponse($exception->getResponse()),
                 null,
                 $this->redactContext($exception->getHandlerContext())
             );

@@ -25,6 +25,9 @@ class RetryPolicyTest extends TestCase
         $this->assertSame($expected, (new RetryPolicy())->shouldRetry($exception));
     }
 
+    /**
+     * @return array<string, array{Throwable, bool}>
+     */
     public static function retryDecisionProvider(): array
     {
         $request = new Request('GET', 'https://example.test');
@@ -74,6 +77,15 @@ class RetryPolicyTest extends TestCase
         $policy->sleep(1.5);
 
         $this->assertSame([1.5], $slept);
+    }
+
+    public function testTheDefaultSleeperActuallyWaits(): void
+    {
+        $start = microtime(true);
+
+        (new RetryPolicy())->sleep(0.05);
+
+        $this->assertGreaterThanOrEqual(0.04, microtime(true) - $start);
     }
 
     public function testRequiresAtLeastOneAttempt(): void

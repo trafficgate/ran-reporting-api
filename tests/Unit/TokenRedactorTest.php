@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Linkshare\Api\RanReporting\Tests\Unit;
 
+use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\InvalidArgumentException as GuzzleInvalidArgumentException;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Exception\TooManyRedirectsException;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
@@ -106,12 +110,79 @@ class TokenRedactorTest extends TestCase
         }
     }
 
-    public function testKeepsTheResponseOnRebuiltExceptions(): void
+    public function testRebuildsEveryKindOfRequestException(): void
     {
-        $response = new Response(403);
-        $original = new ClientException('x', new Request('GET', 'https://x.test'), $response);
+        $request  = new Request('GET', 'https://x.test/r?token=' . urlencode(self::TOKEN));
+        $response = new Response(500);
 
-        $this->assertSame($response, $this->redactor->redact($original)->getResponse());
+        foreach ([
+            new ServerException('msg ' . self::TOKEN, $request, $response),
+            new BadResponseException('msg ' . self::TOKEN, $request, $response),
+            new RequestException('msg ' . self::TOKEN, $request),
+        ] as $original) {
+            $redacted = $this->redactor->redact($original);
+
+            $this->assertInstanceOf(RequestException::class, $redacted);
+            $this->assertSame($original::class, $redacted::class);
+            $this->assertSame('msg REDACTED', $redacted->getMessage());
+            $this->assertSame(
+                $original->getResponse()?->getStatusCode(),
+                $redacted->getResponse()?->getStatusCode()
+            );
+            $this->assertSame('token=REDACTED', $redacted->getRequest()->getUri()->getQuery());
+        }
+    }
+
+    public function testKeepsTheStatusAndProtocolOfTheResponse(): void
+    {
+        $original = new ClientException(
+            'x',
+            new Request('GET', 'https://x.test'),
+            new Response(418, ['X-Other' => 'kept'], 'short and stout', '1.0', 'Teapot')
+        );
+
+        $response = $this->redactRequestException($original)->getResponse();
+
+        $this->assertNotNull($response);
+
+        $this->assertSame(418, $response->getStatusCode());
+        $this->assertSame('Teapot', $response->getReasonPhrase());
+        $this->assertSame('1.0', $response->getProtocolVersion());
+        $this->assertSame('kept', $response->getHeaderLine('X-Other'));
+        $this->assertSame('short and stout', (string) $response->getBody());
+    }
+
+    public function testRedactsTheTokenFromResponseBodyAndHeaders(): void
+    {
+        $body     = '{"error":"bad token ' . self::TOKEN . '"}';
+        $original = new ClientException(
+            'x',
+            new Request('GET', 'https://x.test'),
+            new Response(401, [
+                'Location'       => ['https://x.test/r?token=' . urlencode(self::TOKEN)],
+                'Content-Length' => (string) strlen($body),
+            ], $body)
+        );
+
+        $response = $this->redactRequestException($original)->getResponse();
+
+        $this->assertNotNull($response);
+
+        $this->assertSame('{"error":"bad token REDACTED"}', (string) $response->getBody());
+        $this->assertSame('https://x.test/r?token=REDACTED', $response->getHeaderLine('Location'));
+        $this->assertSame(
+            (string) strlen((string) $response->getBody()),
+            $response->getHeaderLine('Content-Length')
+        );
+    }
+
+    public function testRedactedResponseDoesNotShareTheOriginalStream(): void
+    {
+        $original = new Response(500, [], 'body ' . self::TOKEN);
+        $redacted = $this->redactor->redactResponse($original);
+
+        $this->assertSame('body ' . self::TOKEN, (string) $original->getBody());
+        $this->assertSame('body REDACTED', (string) $redacted->getBody());
     }
 
     public function testLeavesUnrelatedExceptionsAlone(): void
@@ -119,6 +190,23 @@ class TokenRedactorTest extends TestCase
         $exception = new InvalidArgumentException('bad option');
 
         $this->assertSame($exception, $this->redactor->redact($exception));
+    }
+
+    public function testLeavesGuzzleExceptionsWithoutRequestsAloneWhenTheyDoNotMentionTheToken(): void
+    {
+        $exception = new GuzzleInvalidArgumentException('Invalid option');
+
+        $this->assertSame($exception, $this->redactor->redact($exception));
+    }
+
+    public function testReplacesGuzzleExceptionsWithoutRequestsThatMentionTheToken(): void
+    {
+        $redacted = $this->redactor->redact(
+            new GuzzleInvalidArgumentException('Invalid ' . self::TOKEN)
+        );
+
+        $this->assertInstanceOf(RuntimeException::class, $redacted);
+        $this->assertSame('Invalid REDACTED', $redacted->getMessage());
     }
 
     public function testReplacesNonGuzzleExceptionsThatMentionTheToken(): void
@@ -138,5 +226,14 @@ class TokenRedactorTest extends TestCase
 
         $this->assertSame('plain text', $redactor->redactString('plain text'));
         $this->assertSame('?token=REDACTED', $redactor->redactString('?token=abc'));
+    }
+
+    protected function redactRequestException(RequestException $original): RequestException
+    {
+        $redacted = $this->redactor->redact($original);
+
+        $this->assertInstanceOf(RequestException::class, $redacted);
+
+        return $redacted;
     }
 }

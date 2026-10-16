@@ -6,6 +6,7 @@ namespace Linkshare\Api\RanReporting;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
@@ -24,7 +25,7 @@ class Downloader
     /**
      * @param Report               $report      The report to download
      * @param ClientInterface|null $client      Defaults to a Guzzle client with a 600 second timeout
-     * @param array                $options     Default Guzzle request options (proxy, verify, timeout, ...)
+     * @param array<string, mixed> $options     Default Guzzle request options (proxy, verify, timeout, ...)
      * @param RetryPolicy|null     $retryPolicy Defaults to 5 attempts with exponential backoff
      */
     public function __construct(
@@ -47,9 +48,11 @@ class Downloader
      *
      * Exceptions never contain the report token.
      *
-     * @param array $options Guzzle request options, overriding the constructor defaults
+     * @param array<string, mixed> $options Guzzle request options, overriding the constructor defaults
      *
      * @throws InvalidArgumentException If the destination directory is not writable
+     * @throws RuntimeException         If the file cannot be moved into place
+     * @throws GuzzleException          If the download fails (the token is removed from it)
      */
     public function download(
         ?string $destination = null,
@@ -66,14 +69,10 @@ class Downloader
         }
 
         try {
-            $this->response = $this->send($uri, $options, $redactor);
+            $response = $this->send($uri, $options, $redactor);
 
             if ($tempPath !== null) {
-                if (! rename($tempPath, $destination)) {
-                    throw new RuntimeException(
-                        'Unable to move the downloaded report to ' . $destination . '.'
-                    );
-                }
+                $this->moveIntoPlace($tempPath, $destination);
 
                 $tempPath = null;
             }
@@ -83,7 +82,7 @@ class Downloader
             }
         }
 
-        return $this->response;
+        return $this->response = $response;
     }
 
     public function getResponse(): ?ResponseInterface
@@ -91,6 +90,11 @@ class Downloader
         return $this->response;
     }
 
+    /**
+     * @param array<string, mixed> $options
+     *
+     * @throws GuzzleException
+     */
     protected function send(
         string $uri,
         array $options,
@@ -111,6 +115,32 @@ class Downloader
 
                 throw $redactor->redact($exception);
             }
+        }
+    }
+
+    protected function moveIntoPlace(string $tempPath, string $destination): void
+    {
+        $reason = null;
+
+        // Report failure as our own exception, not as a PHP warning that a
+        // framework error handler may turn into something less specific.
+        set_error_handler(static function (int $number, string $message) use (&$reason): bool {
+            $reason = $message;
+
+            return true;
+        });
+
+        try {
+            $moved = rename($tempPath, $destination);
+        } finally {
+            restore_error_handler();
+        }
+
+        if (! $moved) {
+            throw new RuntimeException(
+                'Unable to move the downloaded report to ' . $destination
+                . ($reason !== null ? ': ' . $reason : '.')
+            );
         }
     }
 

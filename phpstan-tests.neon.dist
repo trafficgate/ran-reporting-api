@@ -1,0 +1,8 @@
+# Static analysis of the tests. One level below the strictest: the strictest
+# level also rejects every method call on a value PHPUnit's data providers or
+# generators leave as `mixed`, which adds noise without finding bugs.
+parameters:
+    level: 8
+    paths:
+        - tests
+    tmpDir: .phpstan.cache

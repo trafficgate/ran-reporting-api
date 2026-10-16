@@ -1,0 +1,7 @@
+# Static analysis of the library at PHPStan's strictest level.
+# Tests are analysed separately: see phpstan-tests.neon.dist.
+parameters:
+    level: max
+    paths:
+        - src
+    tmpDir: .phpstan.cache

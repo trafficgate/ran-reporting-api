@@ -13,12 +13,16 @@ composer install
 vendor/bin/phpunit                                   # all tests
 vendor/bin/phpunit tests/Unit/ParserTest.php         # one file
 vendor/bin/phpunit --filter testName                 # one test
+composer analyse                                     # PHPStan: src at max, tests at level 8, no baseline
+composer test-coverage                               # needs pcov or Xdebug (CI uses pcov)
 vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php           # fix style
 vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff   # check only
 php scripts/fake_report_generator.php                # regenerate tests/data/signature-orders.csv
 ```
 
-CI runs PHPUnit 11 on PHP 8.2–8.5 with both `prefer-lowest` and `prefer-stable`, so dependency changes must work at the lowest allowed versions (Guzzle 7.8, league/csv 9.27). A separate workflow runs php-cs-fixer on every push and auto-commits fixes.
+CI runs PHPUnit 11 on PHP 8.2–8.5 with both `prefer-lowest` and `prefer-stable`, so dependency changes must work at the lowest allowed versions (Guzzle 7.8, league/csv 9.27). A separate workflow runs php-cs-fixer on every push and auto-commits fixes, another runs PHPStan, and a `coverage` job in `run-tests.yml` reports pcov coverage in the job summary.
+
+PHPStan must stay clean without a baseline or ignore comments. Fix the types instead, for example with `array<...>` docblocks and `@throws`. The one exception is a test that passes a wrong type on purpose to prove the `TypeError`, which carries a targeted `@phpstan-ignore` with the reason.
 
 `composer.lock` and `phpunit.xml` are gitignored. Local PHPUnit overrides go in `phpunit.xml`.
 
@@ -34,11 +38,13 @@ The flow is three independent steps: `Report` builds the URL, `Downloader` fetch
 
 ### Parser detail worth knowing
 
-For each record the `Parser` reads two views of the same source in lockstep: a `League\Csv\Reader` for the parsed row and an `SplFileObject`/`SplTempFileObject` for the raw line. The raw line is passed to the `RecordFactory`. The BOM is stripped from both views (`skipInputBOM()` on the reader, `stripBom()` on the header line). Changes to parsing must keep the two in sync.
+For each record the `Parser` pairs two views of the same source: the row parsed by `League\Csv\Reader` and the record's raw text from `rawRecords()`. The raw text is passed to the `RecordFactory`. A record is not always one line (quoted fields may contain newlines) and blank lines are skipped, so `rawRecords()` joins physical lines until the quoted field ends and skips blank ones, in the same way League does. Whether a quote opens a field is decided by `advance()` with PHP's own rules: only at the start of a field (after optional spaces or tabs), so `5" pipe` is plain text. Don't go back to counting quotes: that breaks on a stray quote and made the parser throw. This only holds under RFC 4180 quoting, which is why `createCsvReader()` calls `setEscape('')` and pins the delimiter and enclosure. `ParserTest` includes a seeded fuzz test that checks `rawRecords()` against League on random malformed input; keep it passing. If you change how either side splits records, keep them aligned and keep the alignment tests in `ParserTest` passing. The BOM is removed from both sides.
 
 `SignatureOrders\Transaction` maps CSV columns by numeric index constants, so the column order in the report defines the class. The sample fixture (`tests/data/signature-orders.csv`) is generated with fake data by `scripts/fake_report_generator.php`, which writes a UTF-8 BOM and CRLF line endings to mimic the real API. `ParserTest` asserts exactly 1532 records, so regenerating the fixture with a different row count breaks the tests.
+
+`tests/Integration/DownloaderHttpTest.php` runs `Downloader` over real HTTP against `php -S` with `tests/Integration/router.php` (a different scenario per URL prefix), so redaction is checked against real cURL errors and real responses. Run it with the normal suite. It skips itself if a local server cannot be started. Don't start `php -S` with `PHP_CLI_SERVER_WORKERS`: the workers survive `proc_terminate()` and keep PHPUnit's output pipe open, which hangs `phpunit | tail`.
 
 ## Conventions
 
 - Follow `CHANGELOG.md` (Keep a Changelog format) and add entries under `[Unreleased]`.
-- `composer.json` declares a `branch-alias` for `dev-master` (`2.0.x-dev`). Update it when cutting a new major or minor version.
+- `composer.json` declares a `branch-alias` for `dev-master` (`3.0.x-dev`). Update it when cutting a new major or minor version.
