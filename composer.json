@@ -1,48 +1,48 @@
 {
-    "name": "linkshare/ran-reporting-api",
-    "description": "API wrapper for consuming RAN reporting APIs",
-    "type": "library",
-    "license": "MIT",
-    "support": {
-        "issues": "https://github.com/trafficgate/ran-reporting-api/issues",
-        "source": "https://github.com/trafficgate/ran-reporting-api"
-    },
-    "authors": [
-        {
-            "name": "Takuto Hayashi",
-            "email": "takuto.hayashi@rakuten.com"
-        }
-    ],
-    "require": {
-        "php": "^7.2|^8.0",
-        "guzzlehttp/guzzle": "^6.1.1|^7.0",
-        "league/csv": "^9.4"
-    },
-    "require-dev": {
-        "fakerphp/faker": "^1.9",
-        "friendsofphp/php-cs-fixer": "^3.0",
-        "phpunit/phpunit": "^8.5.14|^9.0",
-        "psy/psysh": "^0.11.20"
-    },
-    "autoload": {
-        "psr-4": {
-            "Linkshare\\Api\\RanReporting\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Linkshare\\Api\\RanReporting\\Tests\\": "tests/"
-        }
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.0.x-dev"
-        }
-    },
-    "minimum-stability": "stable",
-    "config": {
-        "optimize-autoloader": true,
-        "preferred-install": "dist",
-        "sort-packages": true
+  "name": "linkshare/ran-reporting-api",
+  "description": "API wrapper for consuming RAN reporting APIs",
+  "type": "library",
+  "license": "MIT",
+  "support": {
+    "issues": "https://github.com/trafficgate/ran-reporting-api/issues",
+    "source": "https://github.com/trafficgate/ran-reporting-api"
+  },
+  "authors": [
+    {
+      "name": "Takuto Hayashi",
+      "email": "takuto.hayashi@rakuten.com"
     }
+  ],
+  "require": {
+    "php": "^7.2|^8.0",
+    "guzzlehttp/guzzle": "^6.1.1|^7.0",
+    "league/csv": "^9.4"
+  },
+  "require-dev": {
+    "fakerphp/faker": "^1.9",
+    "friendsofphp/php-cs-fixer": "^3.0",
+    "phpunit/phpunit": "^8.5.14|^9.0",
+    "psy/psysh": "^0.11.20"
+  },
+  "autoload": {
+    "psr-4": {
+      "Linkshare\\Api\\RanReporting\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Linkshare\\Api\\RanReporting\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "2.0.x-dev"
+    }
+  },
+  "minimum-stability": "stable",
+  "config": {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true
+  }
 }
