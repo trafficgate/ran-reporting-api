@@ -69,11 +69,7 @@ class Downloader
             $this->response = $this->send($uri, $options, $redactor);
 
             if ($tempPath !== null) {
-                if (! rename($tempPath, $destination)) {
-                    throw new RuntimeException(
-                        'Unable to move the downloaded report to ' . $destination . '.'
-                    );
-                }
+                $this->moveIntoPlace($tempPath, $destination);
 
                 $tempPath = null;
             }
@@ -111,6 +107,32 @@ class Downloader
 
                 throw $redactor->redact($exception);
             }
+        }
+    }
+
+    protected function moveIntoPlace(string $tempPath, string $destination): void
+    {
+        $reason = null;
+
+        // Report failure as our own exception, not as a PHP warning that a
+        // framework error handler may turn into something less specific.
+        set_error_handler(static function (int $number, string $message) use (&$reason): bool {
+            $reason = $message;
+
+            return true;
+        });
+
+        try {
+            $moved = rename($tempPath, $destination);
+        } finally {
+            restore_error_handler();
+        }
+
+        if (! $moved) {
+            throw new RuntimeException(
+                'Unable to move the downloaded report to ' . $destination
+                . ($reason !== null ? ': ' . $reason : '.')
+            );
         }
     }
 

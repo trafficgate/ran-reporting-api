@@ -76,6 +76,15 @@ class RetryPolicyTest extends TestCase
         $this->assertSame([1.5], $slept);
     }
 
+    public function testTheDefaultSleeperActuallyWaits(): void
+    {
+        $start = microtime(true);
+
+        (new RetryPolicy())->sleep(0.05);
+
+        $this->assertGreaterThanOrEqual(0.04, microtime(true) - $start);
+    }
+
     public function testRequiresAtLeastOneAttempt(): void
     {
         $this->expectException(InvalidArgumentException::class);

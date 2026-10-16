@@ -6,12 +6,14 @@ namespace Linkshare\Api\RanReporting\Tests\Unit;
 
 use BadMethodCallException;
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use InvalidArgumentException;
@@ -22,6 +24,9 @@ use Linkshare\Api\RanReporting\SignatureOrders;
 use Linkshare\Api\RanReporting\Tests\TestCase;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 use Throwable;
 
 class DownloaderTest extends TestCase
@@ -186,6 +191,94 @@ class DownloaderTest extends TestCase
 
         $this->createDownloader([$this->sampleResponse()])
             ->download($this->workDir);
+    }
+
+    public function testDestinationDirectoryMustBeWritable(): void
+    {
+        if (DIRECTORY_SEPARATOR === '\\' || posix_geteuid() === 0) {
+            $this->markTestSkipped('Needs a POSIX user who is subject to file permissions.');
+        }
+
+        $directory = $this->workDir . '/read-only';
+        mkdir($directory, 0555);
+
+        try {
+            $this->createDownloader([$this->sampleResponse()])
+                ->download($directory . '/report.csv');
+            $this->fail('Expected an InvalidArgumentException.');
+        } catch (InvalidArgumentException $e) {
+            $this->assertStringContainsString('not a writable directory', $e->getMessage());
+        } finally {
+            chmod($directory, 0755);
+            rmdir($directory);
+        }
+    }
+
+    public function testFailureToMoveTheFileIntoPlaceIsReportedAndCleanedUp(): void
+    {
+        $destination = $this->workDir . '/report.csv';
+
+        // Something else creates a directory at the destination while the
+        // download is in progress, so the final rename() cannot succeed.
+        $client = new class ($destination, $this->sampleResponse()) implements ClientInterface {
+            public function __construct(private string $destination, private Response $response) {}
+
+            public function send(RequestInterface $request, array $options = []): ResponseInterface
+            {
+                throw new LogicException('Not used.');
+            }
+
+            public function sendAsync(RequestInterface $request, array $options = []): PromiseInterface
+            {
+                throw new LogicException('Not used.');
+            }
+
+            public function request(string $method, $uri, array $options = []): ResponseInterface
+            {
+                file_put_contents($options['sink'], (string) $this->response->getBody());
+                mkdir($this->destination);
+
+                return $this->response;
+            }
+
+            public function requestAsync(string $method, $uri, array $options = []): PromiseInterface
+            {
+                throw new LogicException('Not used.');
+            }
+
+            public function getConfig(?string $option = null)
+            {
+                return null;
+            }
+        };
+
+        $downloader = new Downloader($this->report, $client);
+
+        try {
+            $downloader->download($destination);
+            $this->fail('Expected a RuntimeException.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('Unable to move', $e->getMessage());
+        } finally {
+            $remaining = $this->filesIn($this->workDir);
+            rmdir($destination);
+        }
+
+        $this->assertSame(['report.csv'], $remaining, 'Only the directory should remain, not the temporary file.');
+    }
+
+    public function testFailureKeepsThePreviousResponse(): void
+    {
+        $downloader = $this->createDownloader([$this->sampleResponse(), new Response(403)]);
+
+        $first = $downloader->download();
+
+        try {
+            $downloader->download();
+        } catch (ClientException) {
+        }
+
+        $this->assertSame($first, $downloader->getResponse());
     }
 
     public function testRetriesTransientFailures(): void
