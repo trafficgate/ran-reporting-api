@@ -49,19 +49,62 @@ class Report
     protected ?string $dateType      = null;
     protected ?string $token         = null;
 
+    /**
+     * @param array{
+     *     language?: string,
+     *     reportName?: string,
+     *     startDate?: string,
+     *     endDate?: string,
+     *     includeSummary?: string,
+     *     network?: int,
+     *     timezone?: string,
+     *     dateType?: string,
+     *     token?: string,
+     * } $props Settings by name; unknown names are ignored
+     */
     public function __construct(array $props = [])
     {
-        foreach (self::VALID_PROPERTY_NAMES as $name) {
-            if (isset($props[$name])) {
-                $method = 'set' . ucfirst($name);
+        if (isset($props['language'])) {
+            $this->setLanguage($props['language']);
+        }
 
-                $this->{$method}($props[$name]);
-            }
+        if (isset($props['reportName'])) {
+            $this->setReportName($props['reportName']);
+        }
+
+        if (isset($props['startDate'])) {
+            $this->setStartDate($props['startDate']);
+        }
+
+        if (isset($props['endDate'])) {
+            $this->setEndDate($props['endDate']);
+        }
+
+        if (isset($props['includeSummary'])) {
+            $this->setIncludeSummary($props['includeSummary']);
+        }
+
+        if (isset($props['network'])) {
+            $this->setNetwork($props['network']);
+        }
+
+        if (isset($props['timezone'])) {
+            $this->setTimezone($props['timezone']);
+        }
+
+        if (isset($props['dateType'])) {
+            $this->setDateType($props['dateType']);
+        }
+
+        if (isset($props['token'])) {
+            $this->setToken($props['token']);
         }
     }
 
     /**
      * Keep the token out of var_dump() and print_r() output.
+     *
+     * @return array<mixed>
      */
     public function __debugInfo(): array
     {
@@ -227,7 +270,7 @@ class Report
 
         $uri = str_replace(
             ['{language}', '{reportName}'],
-            [$this->language, $this->reportName],
+            [(string) $this->language, (string) $this->reportName],
             self::BASE_URI
         );
 

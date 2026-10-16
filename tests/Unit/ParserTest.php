@@ -332,10 +332,18 @@ class ParserTest extends TestCase
 
     public function testRecordsFromAFullDownloadAlignWithTheirRawLines(): void
     {
-        $parser = Parser::createFromPath(self::PATH_TO_SAMPLE_REPORT, $this->pairFactory());
-        $lines  = preg_split('/\r?\n/', trim(file_get_contents(self::PATH_TO_SAMPLE_REPORT)));
+        $parser   = Parser::createFromPath(self::PATH_TO_SAMPLE_REPORT, $this->pairFactory());
+        $contents = file_get_contents(self::PATH_TO_SAMPLE_REPORT);
+
+        $this->assertIsString($contents);
+
+        $lines = preg_split('/\r?\n/', trim($contents));
+
+        $this->assertIsArray($lines);
 
         array_shift($lines);
+
+        $count = 0;
 
         foreach ($parser->parse() as $index => [$row, $line]) {
             $this->assertSame($lines[$index], $line);
@@ -343,9 +351,10 @@ class ParserTest extends TestCase
                 str_getcsv($lines[$index], ',', '"', ''),
                 $row
             );
+            ++$count;
         }
 
-        $this->assertSame(1532, $index + 1);
+        $this->assertSame(1532, $count);
     }
 
     public function testCreateParserFromPath(): void
@@ -363,6 +372,9 @@ class ParserTest extends TestCase
      * Parses with a factory that returns [row, raw line] so a test can check
      * that every record is paired with its own source text.
      */
+    /**
+     * @return list<array{array<array-key, mixed>, string}>
+     */
     protected function parseWithLines(string $csv): array
     {
         return iterator_to_array(
@@ -374,6 +386,11 @@ class ParserTest extends TestCase
     protected function pairFactory(): RecordFactory
     {
         return new class implements RecordFactory {
+            /**
+             * @param array<array-key, mixed> $row
+             *
+             * @return array{array<array-key, mixed>, string}
+             */
             public function create(array $row, string $line): array
             {
                 return [$row, $line];

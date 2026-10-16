@@ -17,6 +17,7 @@ use Linkshare\Api\RanReporting\SignatureOrders;
 use Linkshare\Api\RanReporting\SignatureOrders\TransactionFactory;
 use Linkshare\Api\RanReporting\Tests\TestCase;
 use ReflectionProperty;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -39,6 +40,10 @@ class DownloaderHttpTest extends TestCase
     private static $server;
     private static int $port;
     private static string $stateDir;
+
+    /**
+     * @var array<string, array{false|string, mixed}>
+     */
     private static array $savedEnvironment = [];
 
     private string $workDir;
@@ -48,16 +53,13 @@ class DownloaderHttpTest extends TestCase
         self::$stateDir = sys_get_temp_dir() . '/ran-reporting-api-http-' . bin2hex(random_bytes(6));
         mkdir(self::$stateDir);
 
-        $probe = @stream_socket_server('tcp://127.0.0.1:0', $errorCode, $errorMessage);
-
-        if ($probe === false) {
-            self::markTestSkipped('Cannot open a local socket: ' . $errorMessage);
+        try {
+            self::$port = self::freePort();
+        } catch (RuntimeException $e) {
+            self::markTestSkipped($e->getMessage());
         }
 
-        self::$port = (int) substr(strrchr((string) stream_socket_get_name($probe, false), ':'), 1);
-        fclose($probe);
-
-        self::$server = @proc_open(
+        $process = @proc_open(
             [PHP_BINARY, '-S', '127.0.0.1:' . self::$port, __DIR__ . '/router.php'],
             [0 => ['pipe', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']],
             $pipes,
@@ -65,9 +67,11 @@ class DownloaderHttpTest extends TestCase
             ['RAN_TEST_STATE_DIR' => self::$stateDir, 'PATH' => (string) getenv('PATH')]
         );
 
-        if (! is_resource(self::$server)) {
+        if (! is_resource($process)) {
             self::markTestSkipped('Cannot start the PHP built-in web server.');
         }
+
+        self::$server = $process;
 
         $deadline = microtime(true) + 5;
 
@@ -225,6 +229,7 @@ class DownloaderHttpTest extends TestCase
                 $this->fail('Expected an exception.');
             } catch (RequestException $raw) {
                 $this->assertStringContainsString('token=', $raw->getMessage());
+                $this->assertNotNull($raw->getResponse());
                 $this->assertStringContainsString(
                     urlencode(self::TOKEN),
                     (string) $raw->getResponse()->getBody(),
@@ -250,11 +255,7 @@ class DownloaderHttpTest extends TestCase
 
     public function testRefusedConnectionNeverRevealsTheToken(): void
     {
-        $probe = stream_socket_server('tcp://127.0.0.1:0');
-        $port  = (int) substr(strrchr((string) stream_socket_get_name($probe, false), ':'), 1);
-        fclose($probe);
-
-        $report = $this->report('http://127.0.0.1:' . $port);
+        $report = $this->report('http://127.0.0.1:' . self::freePort());
 
         try {
             (new Client())->request('GET', $report->getUri());
@@ -358,6 +359,29 @@ class DownloaderHttpTest extends TestCase
             $this->assertStringNotContainsString($needle, (string) $e);
             $this->assertStringNotContainsString($needle, $e->getMessage());
         }
+    }
+
+    /**
+     * Asks the operating system for an unused TCP port on the loopback address.
+     */
+    private static function freePort(): int
+    {
+        $socket = @stream_socket_server('tcp://127.0.0.1:0', $errorCode, $errorMessage);
+
+        if ($socket === false) {
+            throw new RuntimeException('Cannot open a local socket: ' . $errorMessage);
+        }
+
+        $name = stream_socket_get_name($socket, false);
+        fclose($socket);
+
+        $colon = $name === false ? false : strrpos($name, ':');
+
+        if ($name === false || $colon === false) {
+            throw new RuntimeException('Cannot determine the local port.');
+        }
+
+        return (int) substr($name, $colon + 1);
     }
 
     private static function stopServer(): void

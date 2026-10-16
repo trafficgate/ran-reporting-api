@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use Linkshare\Api\RanReporting\SignatureOrders\Transaction;
 use Linkshare\Api\RanReporting\SignatureOrders\TransactionFactory;
 use Linkshare\Api\RanReporting\Tests\TestCase;
+use ReflectionProperty;
 
 class TransactionTest extends TestCase
 {
@@ -69,11 +70,12 @@ class TransactionTest extends TestCase
 
         $this->expectException(Error::class);
 
-        (function (): void {
-            $this->memberId = 'changed';
-        })->call($transaction);
+        (new ReflectionProperty(Transaction::class, 'memberId'))->setValue($transaction, 'changed');
     }
 
+    /**
+     * @return list<string>
+     */
     protected function columns(): array
     {
         return ['1', '2', 'Advertiser', '4', '5/6/70', '07:08:09', '7', '8.90', '1', '0.5', '5/7/70', '10:11:12'];

@@ -122,6 +122,7 @@ class TokenRedactorTest extends TestCase
         ] as $original) {
             $redacted = $this->redactor->redact($original);
 
+            $this->assertInstanceOf(RequestException::class, $redacted);
             $this->assertSame($original::class, $redacted::class);
             $this->assertSame('msg REDACTED', $redacted->getMessage());
             $this->assertSame(
@@ -140,7 +141,9 @@ class TokenRedactorTest extends TestCase
             new Response(418, ['X-Other' => 'kept'], 'short and stout', '1.0', 'Teapot')
         );
 
-        $response = $this->redactor->redact($original)->getResponse();
+        $response = $this->redactRequestException($original)->getResponse();
+
+        $this->assertNotNull($response);
 
         $this->assertSame(418, $response->getStatusCode());
         $this->assertSame('Teapot', $response->getReasonPhrase());
@@ -161,7 +164,9 @@ class TokenRedactorTest extends TestCase
             ], $body)
         );
 
-        $response = $this->redactor->redact($original)->getResponse();
+        $response = $this->redactRequestException($original)->getResponse();
+
+        $this->assertNotNull($response);
 
         $this->assertSame('{"error":"bad token REDACTED"}', (string) $response->getBody());
         $this->assertSame('https://x.test/r?token=REDACTED', $response->getHeaderLine('Location'));
@@ -221,5 +226,14 @@ class TokenRedactorTest extends TestCase
 
         $this->assertSame('plain text', $redactor->redactString('plain text'));
         $this->assertSame('?token=REDACTED', $redactor->redactString('?token=abc'));
+    }
+
+    protected function redactRequestException(RequestException $original): RequestException
+    {
+        $redacted = $this->redactor->redact($original);
+
+        $this->assertInstanceOf(RequestException::class, $redacted);
+
+        return $redacted;
     }
 }

@@ -6,10 +6,14 @@ namespace Linkshare\Api\RanReporting;
 
 use Generator;
 use League\Csv\Reader as CsvReader;
+use LogicException;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use Stringable;
 
+/**
+ * @phpstan-consistent-constructor
+ */
 class Parser
 {
     public const SOURCE_STRING = 'string';
@@ -54,11 +58,14 @@ class Parser
         $csvReader  = $this->createCsvReader();
         $rawRecords = $this->rawRecords($csvReader->getInputBOM());
         $row        = $csvReader->first();
-        $line       = $rawRecords->current() ?? '';
+        $line       = $rawRecords->valid() ? $rawRecords->current() : '';
 
         return $this->recordFactory->create($row, $line);
     }
 
+    /**
+     * @return Generator<int, mixed> One record per row, as built by the RecordFactory
+     */
     public function parse(): Generator
     {
         $csvReader  = $this->createCsvReader();
@@ -86,11 +93,15 @@ class Parser
         }
     }
 
+    /**
+     * @return CsvReader<array<array-key, mixed>>
+     */
     protected function createCsvReader(): CsvReader
     {
         $csvReader = match ($this->sourceType) {
             self::SOURCE_STRING => CsvReader::fromString($this->source),
             self::SOURCE_PATH   => CsvReader::from($this->source),
+            default             => throw new LogicException('Unknown source type ' . $this->sourceType . '.'),
         };
 
         // RFC 4180: a quote inside a field is written as two quotes and a
@@ -108,6 +119,8 @@ class Parser
      * A record is not always one line: a quoted field may contain newlines,
      * so lines are joined until the quotes balance. Blank lines are skipped,
      * as League\Csv skips them.
+     *
+     * @return Generator<int, string>
      */
     protected function rawRecords(string $bom): Generator
     {

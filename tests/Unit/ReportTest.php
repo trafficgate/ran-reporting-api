@@ -105,6 +105,8 @@ class ReportTest extends TestCase
     {
         $this->expectException(TypeError::class);
 
+        // A wrong type on purpose: strict_types must turn it into a TypeError.
+        // @phpstan-ignore argument.type
         (new Report())->setNetwork('1');
     }
 

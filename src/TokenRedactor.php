@@ -90,6 +90,10 @@ final class TokenRedactor
     /**
      * Strings are redacted and arrays are walked. Anything else (curl handles,
      * objects) is dropped because it cannot be inspected safely.
+     *
+     * @param array<array-key, mixed> $context
+     *
+     * @return array<array-key, mixed>
      */
     public function redactContext(array $context): array
     {

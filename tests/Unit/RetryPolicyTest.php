@@ -25,6 +25,9 @@ class RetryPolicyTest extends TestCase
         $this->assertSame($expected, (new RetryPolicy())->shouldRetry($exception));
     }
 
+    /**
+     * @return array<string, array{Throwable, bool}>
+     */
     public static function retryDecisionProvider(): array
     {
         $request = new Request('GET', 'https://example.test');

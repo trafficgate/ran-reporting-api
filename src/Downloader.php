@@ -6,6 +6,7 @@ namespace Linkshare\Api\RanReporting;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
@@ -24,7 +25,7 @@ class Downloader
     /**
      * @param Report               $report      The report to download
      * @param ClientInterface|null $client      Defaults to a Guzzle client with a 600 second timeout
-     * @param array                $options     Default Guzzle request options (proxy, verify, timeout, ...)
+     * @param array<string, mixed> $options     Default Guzzle request options (proxy, verify, timeout, ...)
      * @param RetryPolicy|null     $retryPolicy Defaults to 5 attempts with exponential backoff
      */
     public function __construct(
@@ -47,9 +48,11 @@ class Downloader
      *
      * Exceptions never contain the report token.
      *
-     * @param array $options Guzzle request options, overriding the constructor defaults
+     * @param array<string, mixed> $options Guzzle request options, overriding the constructor defaults
      *
      * @throws InvalidArgumentException If the destination directory is not writable
+     * @throws RuntimeException         If the file cannot be moved into place
+     * @throws GuzzleException          If the download fails (the token is removed from it)
      */
     public function download(
         ?string $destination = null,
@@ -66,7 +69,7 @@ class Downloader
         }
 
         try {
-            $this->response = $this->send($uri, $options, $redactor);
+            $response = $this->send($uri, $options, $redactor);
 
             if ($tempPath !== null) {
                 $this->moveIntoPlace($tempPath, $destination);
@@ -79,7 +82,7 @@ class Downloader
             }
         }
 
-        return $this->response;
+        return $this->response = $response;
     }
 
     public function getResponse(): ?ResponseInterface
@@ -87,6 +90,11 @@ class Downloader
         return $this->response;
     }
 
+    /**
+     * @param array<string, mixed> $options
+     *
+     * @throws GuzzleException
+     */
     protected function send(
         string $uri,
         array $options,

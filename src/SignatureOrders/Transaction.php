@@ -36,6 +36,11 @@ class Transaction
     protected readonly string $processDate;
     protected readonly string $processTime;
 
+    /**
+     * @param array<array-key, mixed> $data The CSV columns, in the report's order
+     *
+     * @throws InvalidArgumentException If there are too few columns or a column is not a string
+     */
     public function __construct(array $data, protected readonly string $originalString)
     {
         if (count($data) < self::COLUMN_COUNT) {
@@ -47,18 +52,18 @@ class Transaction
             ));
         }
 
-        $this->memberId        = $data[self::MEMBER_ID];
-        $this->mid             = $data[self::MID];
-        $this->advertiserName  = $data[self::ADVERTISER_NAME];
-        $this->orderId         = $data[self::ORDER_ID];
-        $this->transactionDate = $data[self::TRANSACTION_DATE];
-        $this->transactionTime = $data[self::TRANSACTION_TIME];
-        $this->sku             = $data[self::SKU];
-        $this->sales           = $data[self::SALES];
-        $this->numberOfItems   = $data[self::NUMBER_OF_ITEMS];
-        $this->totalCommission = $data[self::TOTAL_COMMISSION];
-        $this->processDate     = $data[self::PROCESS_DATE];
-        $this->processTime     = $data[self::PROCESS_TIME];
+        $this->memberId        = self::column($data, self::MEMBER_ID);
+        $this->mid             = self::column($data, self::MID);
+        $this->advertiserName  = self::column($data, self::ADVERTISER_NAME);
+        $this->orderId         = self::column($data, self::ORDER_ID);
+        $this->transactionDate = self::column($data, self::TRANSACTION_DATE);
+        $this->transactionTime = self::column($data, self::TRANSACTION_TIME);
+        $this->sku             = self::column($data, self::SKU);
+        $this->sales           = self::column($data, self::SALES);
+        $this->numberOfItems   = self::column($data, self::NUMBER_OF_ITEMS);
+        $this->totalCommission = self::column($data, self::TOTAL_COMMISSION);
+        $this->processDate     = self::column($data, self::PROCESS_DATE);
+        $this->processTime     = self::column($data, self::PROCESS_TIME);
     }
 
     public function memberId(): string
@@ -124,5 +129,20 @@ class Transaction
     public function originalString(): string
     {
         return $this->originalString;
+    }
+
+    /**
+     * @param array<array-key, mixed> $data
+     */
+    private static function column(array $data, int $index): string
+    {
+        $value = $data[$index] ?? null;
+
+        if (! is_string($value)) {
+            // Names the column, never its value: it may be member data.
+            throw new InvalidArgumentException(sprintf('Column %d is missing or not a string.', $index));
+        }
+
+        return $value;
     }
 }

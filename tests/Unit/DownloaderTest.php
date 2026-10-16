@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Linkshare\Api\RanReporting\Tests\Unit;
 
+use ArrayObject;
 use BadMethodCallException;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -27,7 +29,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
-use Throwable;
 
 class DownloaderTest extends TestCase
 {
@@ -35,7 +36,15 @@ class DownloaderTest extends TestCase
 
     protected string $workDir;
     protected Report $report;
-    protected array $history;
+
+    /**
+     * @var ArrayObject<int, array<mixed, mixed>>
+     */
+    protected ArrayObject $history;
+
+    /**
+     * @var list<float>
+     */
     protected array $sleeps;
     protected string $originalIgnoreArgs;
 
@@ -53,7 +62,7 @@ class DownloaderTest extends TestCase
             'dateType'  => Report::DATE_TYPE_PROCESS,
             'token'     => self::TOKEN,
         ]);
-        $this->history = [];
+        $this->history = new ArrayObject();
         $this->sleeps  = [];
 
         // Make PHP record call arguments in exception traces, as a development
@@ -86,7 +95,7 @@ class DownloaderTest extends TestCase
         $this->assertCount(1, $this->history);
         $this->assertEquals(
             $this->report->getUri(),
-            (string) $this->history[0]['request']->getUri()
+            (string) $this->recordedRequest(0)->getUri()
         );
         $this->assertSame($response, $downloader->getResponse());
         $this->assertStringEqualsFile(
@@ -104,7 +113,7 @@ class DownloaderTest extends TestCase
 
         $downloader->download(null, ['verify' => false]);
 
-        $options = $this->history[0]['options'];
+        $options = $this->recordedOptions(0);
 
         $this->assertSame('http://proxy.test:3128', $options['proxy']);
         $this->assertFalse($options['verify']);
@@ -223,24 +232,38 @@ class DownloaderTest extends TestCase
         $client = new class ($destination, $this->sampleResponse()) implements ClientInterface {
             public function __construct(private string $destination, private Response $response) {}
 
+            /**
+             * @param array<string, mixed> $options
+             */
             public function send(RequestInterface $request, array $options = []): ResponseInterface
             {
                 throw new LogicException('Not used.');
             }
 
+            /**
+             * @param array<string, mixed> $options
+             */
             public function sendAsync(RequestInterface $request, array $options = []): PromiseInterface
             {
                 throw new LogicException('Not used.');
             }
 
+            /**
+             * @param array<string, mixed> $options
+             * @param mixed                $uri
+             */
             public function request(string $method, $uri, array $options = []): ResponseInterface
             {
-                file_put_contents($options['sink'], (string) $this->response->getBody());
+                file_put_contents((string) $options['sink'], (string) $this->response->getBody());
                 mkdir($this->destination);
 
                 return $this->response;
             }
 
+            /**
+             * @param array<string, mixed> $options
+             * @param mixed                $uri
+             */
             public function requestAsync(string $method, $uri, array $options = []): PromiseInterface
             {
                 throw new LogicException('Not used.');
@@ -369,6 +392,10 @@ class DownloaderTest extends TestCase
         }
     }
 
+    /**
+     * @param callable(self): mixed                           $failure
+     * @param class-string<ConnectException|RequestException> $expectedClass
+     */
     #[DataProvider('failureProvider')]
     public function testExceptionsNeverContainTheToken(
         callable $failure,
@@ -379,7 +406,7 @@ class DownloaderTest extends TestCase
         try {
             $downloader->download();
             $this->fail('Expected ' . $expectedClass . '.');
-        } catch (Throwable $e) {
+        } catch (ConnectException|RequestException $e) {
             $this->assertInstanceOf($expectedClass, $e);
             $this->assertNull($e->getPrevious());
 
@@ -396,6 +423,9 @@ class DownloaderTest extends TestCase
         }
     }
 
+    /**
+     * @return array<string, array{callable(self): mixed, class-string<ConnectException|RequestException>}>
+     */
     public static function failureProvider(): array
     {
         return [
@@ -457,13 +487,19 @@ class DownloaderTest extends TestCase
         return new Response(200, [], $this->createSampleReportStream());
     }
 
+    /**
+     * @param list<mixed>          $queue   Responses and exceptions for the mock handler
+     * @param array<string, mixed> $options Default request options for the Downloader
+     */
     protected function createDownloader(
         array $queue,
         array $options = [],
         int $maxAttempts = 5
     ): Downloader {
         $stack = HandlerStack::create(new MockHandler($queue));
-        $stack->push(Middleware::history($this->history));
+        // Guzzle takes the container by reference; the object itself is shared.
+        $history = $this->history;
+        $stack->push(Middleware::history($history));
 
         return new Downloader(
             $this->report,
@@ -488,6 +524,30 @@ class DownloaderTest extends TestCase
         );
     }
 
+    protected function recordedRequest(int $index): RequestInterface
+    {
+        $request = ($this->history[$index] ?? [])['request'] ?? null;
+
+        $this->assertInstanceOf(RequestInterface::class, $request);
+
+        return $request;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function recordedOptions(int $index): array
+    {
+        $options = ($this->history[$index] ?? [])['options'] ?? null;
+
+        $this->assertIsArray($options);
+
+        return $options;
+    }
+
+    /**
+     * @return list<string>
+     */
     protected function filesIn(string $directory): array
     {
         return array_values(array_diff(

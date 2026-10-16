@@ -24,7 +24,7 @@ if (preg_match('#^https?://#i', $uri) === 1) {
 
 $segments = explode('/', ltrim((string) parse_url($uri, PHP_URL_PATH), '/'));
 
-switch ($segments[0] ?? '') {
+switch ($segments[0]) {
     case 'ok':
         header('Content-Type: text/csv');
         readfile($sample);

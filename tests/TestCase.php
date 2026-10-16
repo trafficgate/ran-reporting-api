@@ -6,6 +6,7 @@ namespace Linkshare\Api\RanReporting\Tests;
 
 use GuzzleHttp\Psr7\Stream;
 use PHPUnit\Framework\TestCase as BaseTestCase;
+use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -13,6 +14,12 @@ abstract class TestCase extends BaseTestCase
 
     protected function createSampleReportStream(): Stream
     {
-        return new Stream(fopen(self::PATH_TO_SAMPLE_REPORT, 'r'));
+        $handle = fopen(self::PATH_TO_SAMPLE_REPORT, 'r');
+
+        if ($handle === false) {
+            throw new RuntimeException('Cannot open ' . self::PATH_TO_SAMPLE_REPORT);
+        }
+
+        return new Stream($handle);
     }
 }
