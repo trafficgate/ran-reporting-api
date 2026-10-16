@@ -7,8 +7,7 @@ namespace Linkshare\Api\RanReporting;
 use Generator;
 use League\Csv\Reader as CsvReader;
 use Psr\Http\Message\ResponseInterface;
-use SplFileObject;
-use SplTempFileObject;
+use RuntimeException;
 use Stringable;
 
 class Parser
@@ -53,15 +52,9 @@ class Parser
     public function getHeader(): mixed
     {
         $csvReader  = $this->createCsvReader();
-        $sourceFile = $this->createFileObject();
-        $inputBom   = $csvReader->getInputBOM();
+        $rawRecords = $this->rawRecords($csvReader->getInputBOM());
         $row        = $csvReader->first();
-        $line       = $sourceFile->fgets();
-        $line       = $this->stripNewline($line);
-
-        if (! empty($inputBom)) {
-            $line = $this->stripBom($line, $inputBom);
-        }
+        $line       = $rawRecords->current() ?? '';
 
         return $this->recordFactory->create($row, $line);
     }
@@ -69,14 +62,23 @@ class Parser
     public function parse(): Generator
     {
         $csvReader  = $this->createCsvReader();
-        $sourceFile = $this->createFileObject();
+        $rawRecords = $this->rawRecords($csvReader->getInputBOM());
+        $isHeader   = true;
 
-        foreach ($csvReader->getRecords() as $offset => $row) {
-            $line = $sourceFile->fgets();
-            $line = $this->stripNewline($line);
+        foreach ($csvReader->getRecords() as $row) {
+            if (! $rawRecords->valid()) {
+                throw new RuntimeException(
+                    'Unable to match a parsed record to its source text.'
+                );
+            }
 
-            if ($offset === 0) {
-                // Skip the first line (header)
+            $line = $rawRecords->current();
+            $rawRecords->next();
+
+            if ($isHeader) {
+                // Skip the first record (header)
+                $isHeader = false;
+
                 continue;
             }
 
@@ -91,36 +93,82 @@ class Parser
             self::SOURCE_PATH   => CsvReader::from($this->source),
         };
 
+        // RFC 4180: a quote inside a field is written as two quotes and a
+        // backslash is an ordinary character. rawRecords() relies on this.
+        $csvReader->setEscape('');
         $csvReader->skipInputBOM();
 
         return $csvReader;
     }
 
-    protected function createFileObject(): SplFileObject
+    /**
+     * Yields the source text of each CSV record, without line endings or BOM,
+     * in the same order as the records League\Csv parses.
+     *
+     * A record is not always one line: a quoted field may contain newlines,
+     * so lines are joined until the quotes balance. Blank lines are skipped,
+     * as League\Csv skips them.
+     */
+    protected function rawRecords(string $bom): Generator
     {
-        return match ($this->sourceType) {
-            self::SOURCE_STRING => $this->createTempFileObject(),
-            self::SOURCE_PATH   => new SplFileObject($this->source),
-        };
+        $stream = $this->openStream();
+
+        try {
+            $buffer      = '';
+            $isFirstLine = true;
+
+            while (($physicalLine = fgets($stream)) !== false) {
+                if ($isFirstLine && $bom !== '' && str_starts_with($physicalLine, $bom)) {
+                    $physicalLine = substr($physicalLine, strlen($bom));
+                }
+
+                $isFirstLine = false;
+                $buffer .= $physicalLine;
+
+                if (substr_count($buffer, '"') % 2 !== 0) {
+                    continue;
+                }
+
+                $record = $this->stripNewline($buffer);
+                $buffer = '';
+
+                if ($record !== '') {
+                    yield $record;
+                }
+            }
+
+            if ($buffer !== '') {
+                // The source ends inside a quoted field.
+                yield $this->stripNewline($buffer);
+            }
+        } finally {
+            fclose($stream);
+        }
     }
 
-    protected function createTempFileObject(): SplTempFileObject
+    /**
+     * @return resource
+     */
+    protected function openStream()
     {
-        $sourceFile = new SplTempFileObject();
+        $stream = $this->sourceType === self::SOURCE_PATH
+            ? @fopen($this->source, 'rb')
+            : fopen('php://temp', 'r+b');
 
-        $sourceFile->fwrite($this->source);
-        $sourceFile->rewind();
+        if ($stream === false) {
+            throw new RuntimeException('Unable to open ' . $this->source . '.');
+        }
 
-        return $sourceFile;
+        if ($this->sourceType === self::SOURCE_STRING) {
+            fwrite($stream, $this->source);
+            rewind($stream);
+        }
+
+        return $stream;
     }
 
     protected function stripNewline(string $line): string
     {
         return rtrim($line, "\n\r");
-    }
-
-    protected function stripBom(string $line, string $bom): string
-    {
-        return mb_substr($line, mb_strlen($bom));
     }
 }

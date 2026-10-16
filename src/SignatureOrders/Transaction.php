@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Linkshare\Api\RanReporting\SignatureOrders;
 
+use InvalidArgumentException;
+
 class Transaction
 {
     public const MEMBER_ID        = 0;
@@ -18,6 +20,8 @@ class Transaction
     public const TOTAL_COMMISSION = 9;
     public const PROCESS_DATE     = 10;
     public const PROCESS_TIME     = 11;
+
+    public const COLUMN_COUNT = 12;
 
     protected readonly string $memberId;
     protected readonly string $mid;
@@ -34,6 +38,15 @@ class Transaction
 
     public function __construct(array $data, protected readonly string $originalString)
     {
+        if (count($data) < self::COLUMN_COUNT) {
+            // Deliberately leaves the record out: it may contain member data.
+            throw new InvalidArgumentException(sprintf(
+                'Expected at least %d columns, got %d.',
+                self::COLUMN_COUNT,
+                count($data)
+            ));
+        }
+
         $this->memberId        = $data[self::MEMBER_ID];
         $this->mid             = $data[self::MID];
         $this->advertiserName  = $data[self::ADVERTISER_NAME];
