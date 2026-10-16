@@ -16,12 +16,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - The API token is removed from exceptions thrown by `Downloader::download()`. They keep their Guzzle class, response and status code, but the message, request, handler context and previous exception no longer contain the token.
 - `Report::getRedactedUri()`, and `var_dump()` / `print_r()` of a `Report` hide the token.
 - `Downloader::download($destination)` writes to a temporary file and moves it into place only on success, so a failed download never replaces or truncates an existing file.
+- PHPStan static analysis (`composer analyse`): `src/` at the strictest level and `tests/` at level 8, both without a baseline. CI runs it in a new `static-analysis` workflow.
+- A `coverage` CI job that measures code coverage with pcov and reports it in the job summary. `composer test`, `composer test-coverage`, `composer analyse` and `composer cs` scripts.
 - Tests for invalid setter values, missing report settings, wrong scalar types, `Parser::createFromResponse()`, retries, atomic downloads, token redaction, and parsing of blank lines, multi-line fields, and malformed rows. Integration tests run `Downloader` over real HTTP against PHP's built-in web server.
 
 ### Changed
 
 - `Parser` follows RFC 4180 quoting: a backslash is an ordinary character, so `\"` no longer escapes a quote. This keeps parsed rows and their source text aligned.
-- `Transaction` throws an `InvalidArgumentException` (without quoting the row) if a row has fewer than 12 columns, instead of failing on an undefined array key.
+- `Transaction` throws an `InvalidArgumentException` (without quoting the row) if a row has fewer than 12 columns or a column is not a string, instead of failing on an undefined array key or a `TypeError`.
+- `RecordFactory::create()` and the `Parser` document their types for static analysis: `Parser::parse()` is a `Generator<int, mixed>`, and `Downloader::download()` declares the exceptions it throws.
 - Exceptions thrown by `Downloader::download()` now carry a copy of the response with the token removed from its headers and body.
 - Minimum supported PHP version (`^7.2|^8.0` => `^8.2`).
 - Minimum supported versions for dependencies.

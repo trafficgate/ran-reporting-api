@@ -202,9 +202,14 @@ class MyFactory implements RecordFactory
 
 ```bash
 composer install
-vendor/bin/phpunit
-vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php
+composer test                      # PHPUnit
+composer analyse                   # PHPStan: src at the strictest level, tests at level 8
+composer cs                        # php-cs-fixer, check only
+vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php   # apply style fixes
+composer test-coverage             # needs the pcov or Xdebug extension
 ```
+
+CI runs the tests on PHP 8.2 to 8.5, runs PHPStan, and reports coverage measured with [pcov](https://github.com/krakjoe/pcov) in the job summary.
 
 The tests include integration tests that download from PHP's built-in web server on `127.0.0.1` (`tests/Integration/`), so they need no network access. They use a generated sample report (`tests/data/signature-orders.csv`) that contains fake data only. It can be regenerated with `php scripts/fake_report_generator.php`.
 

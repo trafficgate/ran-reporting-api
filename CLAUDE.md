@@ -13,12 +13,16 @@ composer install
 vendor/bin/phpunit                                   # all tests
 vendor/bin/phpunit tests/Unit/ParserTest.php         # one file
 vendor/bin/phpunit --filter testName                 # one test
+composer analyse                                     # PHPStan: src at max, tests at level 8, no baseline
+composer test-coverage                               # needs pcov or Xdebug (CI uses pcov)
 vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php           # fix style
 vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff   # check only
 php scripts/fake_report_generator.php                # regenerate tests/data/signature-orders.csv
 ```
 
-CI runs PHPUnit 11 on PHP 8.2–8.5 with both `prefer-lowest` and `prefer-stable`, so dependency changes must work at the lowest allowed versions (Guzzle 7.8, league/csv 9.27). A separate workflow runs php-cs-fixer on every push and auto-commits fixes.
+CI runs PHPUnit 11 on PHP 8.2–8.5 with both `prefer-lowest` and `prefer-stable`, so dependency changes must work at the lowest allowed versions (Guzzle 7.8, league/csv 9.27). A separate workflow runs php-cs-fixer on every push and auto-commits fixes, another runs PHPStan, and a `coverage` job in `run-tests.yml` reports pcov coverage in the job summary.
+
+PHPStan must stay clean without a baseline or ignore comments. Fix the types instead, for example with `array<...>` docblocks and `@throws`. The one exception is a test that passes a wrong type on purpose to prove the `TypeError`, which carries a targeted `@phpstan-ignore` with the reason.
 
 `composer.lock` and `phpunit.xml` are gitignored. Local PHPUnit overrides go in `phpunit.xml`.
 
