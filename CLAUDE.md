@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-A small PHP library (`linkshare/ran-reporting-api`, namespace `Linkshare\Api\RanReporting`) for downloading and parsing CSV reports from the Rakuten Advertising (RAN) reporting API. It supports PHP ^7.2 and ^8.0, so avoid syntax newer than 7.2 (no typed properties, `match`, constructor promotion, etc.).
+A small PHP library (`linkshare/ran-reporting-api`, namespace `Linkshare\Api\RanReporting`) for downloading and parsing CSV reports from the Rakuten Advertising (RAN) reporting API. It requires PHP ^8.2, so avoid syntax newer than 8.2 (for example, no typed class constants, which need 8.3). Every file uses `declare(strict_types=1)`.
 
 ## Commands
 
@@ -18,7 +18,7 @@ vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff   #
 php scripts/fake_report_generator.php                # regenerate tests/data/signature-orders.csv
 ```
 
-CI runs PHPUnit on PHP 7.2–8.2 with both `prefer-lowest` and `prefer-stable`, so dependency changes must work at the lowest allowed versions (Guzzle 6.1.1, league/csv 9.4). A separate workflow runs php-cs-fixer on every push and auto-commits fixes.
+CI runs PHPUnit 11 on PHP 8.2–8.5 with both `prefer-lowest` and `prefer-stable`, so dependency changes must work at the lowest allowed versions (Guzzle 7.8, league/csv 9.15). A separate workflow runs php-cs-fixer on every push and auto-commits fixes.
 
 `composer.lock` and `phpunit.xml` are gitignored. Local PHPUnit overrides go in `phpunit.xml`.
 
