@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [3.0.0] - 2026-10-16
-
 ### Added
 
 - Native parameter, return, and property types throughout, with `declare(strict_types=1)` in every file.
@@ -77,8 +75,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Please fill me out.
 
-[Unreleased]: https://github.com/trafficgate/ran-reporting-api/compare/v3.0.0...HEAD
-[3.0.0]: https://github.com/trafficgate/ran-reporting-api/compare/v2.0.1...v3.0.0
+[Unreleased]: https://github.com/trafficgate/ran-reporting-api/compare/v2.0.1...HEAD
 [2.0.1]: https://github.com/trafficgate/ran-reporting-api/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/trafficgate/ran-reporting-api/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/trafficgate/ran-reporting-api/compare/v1.0.0...v1.0.1
