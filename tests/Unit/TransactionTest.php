@@ -57,6 +57,29 @@ class TransactionTest extends TestCase
         }
     }
 
+    public function testANonStringColumnIsRejectedWithoutQuotingIt(): void
+    {
+        $columns    = $this->columns();
+        $columns[9] = null;
+
+        try {
+            new Transaction($columns, 'raw');
+            $this->fail('Expected an InvalidArgumentException.');
+        } catch (InvalidArgumentException $e) {
+            $this->assertSame('Column 9 is missing or not a string.', $e->getMessage());
+        }
+    }
+
+    public function testAColumnMissingFromANonListRowIsRejected(): void
+    {
+        $columns = array_combine(range(100, 111), $this->columns());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Column 0 is missing or not a string.');
+
+        new Transaction($columns, 'raw');
+    }
+
     public function testFactoryRejectsAShortRow(): void
     {
         $this->expectException(InvalidArgumentException::class);

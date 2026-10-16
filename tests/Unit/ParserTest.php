@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Linkshare\Api\RanReporting\Tests\Unit;
 
+use Generator;
 use GuzzleHttp\Psr7\Response;
 use League\Csv\UnavailableStream;
 use Linkshare\Api\RanReporting\Parser;
 use Linkshare\Api\RanReporting\RecordFactory;
 use Linkshare\Api\RanReporting\SignatureOrders\TransactionFactory;
 use Linkshare\Api\RanReporting\Tests\TestCase;
+use LogicException;
+use RuntimeException;
 
 class ParserTest extends TestCase
 {
@@ -259,6 +262,156 @@ class ParserTest extends TestCase
             [['C:\dir\\', '2'], '"C:\dir\",2'],
             [['c', '3'], 'c,3'],
         ], $records);
+    }
+
+    public function testAQuoteInsideAnUnquotedFieldIsLiteralText(): void
+    {
+        $records = $this->parseWithLines("h1,h2\nPipes 5\" Inc,1\nc,2\n5\",3\nd,4\n");
+
+        $this->assertSame([
+            [['Pipes 5" Inc', '1'], 'Pipes 5" Inc,1'],
+            [['c', '2'], 'c,2'],
+            [['5"', '3'], '5",3'],
+            [['d', '4'], 'd,4'],
+        ], $records);
+    }
+
+    public function testTextAfterAClosingQuoteIsPartOfTheField(): void
+    {
+        $records = $this->parseWithLines("h1,h2\n\"ab\"c,1\n\"x\ny\"z,2\nd,3\n");
+
+        $this->assertSame([
+            [['abc', '1'], '"ab"c,1'],
+            [["x\nyz", '2'], "\"x\ny\"z,2"],
+            [['d', '3'], 'd,3'],
+        ], $records);
+    }
+
+    public function testWhitespaceBeforeAnOpeningQuoteStillOpensTheField(): void
+    {
+        $records = $this->parseWithLines("h1,h2,h3\na, \"b\nc\",2\nd,\t\"e,f\",3\ng,h,4\n");
+
+        $this->assertSame([
+            [['a', "b\nc", '2'], "a, \"b\nc\",2"],
+            [['d', 'e,f', '3'], "d,\t\"e,f\",3"],
+            [['g', 'h', '4'], 'g,h,4'],
+        ], $records);
+    }
+
+    public function testQuotedFieldsMixedWithStrayQuotesOnTheSameLine(): void
+    {
+        $records = $this->parseWithLines("h1,h2,h3\n\"a\nb\",5\" pipe,\"c\"\nd,e,f\n");
+
+        $this->assertSame([
+            [["a\nb", '5" pipe', 'c'], "\"a\nb\",5\" pipe,\"c\""],
+            [['d', 'e', 'f'], 'd,e,f'],
+        ], $records);
+    }
+
+    public function testASourceThatEndsInsideAQuotedFieldKeepsTheTextItHas(): void
+    {
+        $records = $this->parseWithLines("h1,h2\na,1\n\"b,2\n");
+
+        $this->assertSame([
+            [['a', '1'], 'a,1'],
+            [["b,2\n"], '"b,2'],
+        ], $records);
+    }
+
+    public function testAnUnknownSourceTypeIsRejected(): void
+    {
+        $parser = new class ('x', 'bogus') extends Parser {
+            public function __construct(string $source, string $sourceType, ?RecordFactory $recordFactory = null)
+            {
+                parent::__construct($source, $sourceType, $recordFactory);
+            }
+        };
+
+        $this->expectException(LogicException::class);
+
+        iterator_to_array($parser->parse());
+    }
+
+    public function testRecordsThatCannotBePairedWithTheirSourceTextAreReported(): void
+    {
+        $parser = new class ('h1,h2' . "\n" . 'a,1' . "\n", Parser::SOURCE_STRING) extends Parser {
+            public function __construct(string $source, string $sourceType, ?RecordFactory $recordFactory = null)
+            {
+                parent::__construct($source, $sourceType, $recordFactory);
+            }
+
+            protected function rawRecords(string $bom): Generator
+            {
+                yield from [];
+            }
+        };
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unable to match a parsed record');
+
+        iterator_to_array($parser->parse());
+    }
+
+    /**
+     * Random, mostly malformed CSV: quotes in odd places, stray backslashes,
+     * blank lines, mixed line endings, multi-byte text, sources that end inside
+     * a quote. However strange the input, the source-text side must find
+     * exactly the records League\Csv finds, and every record's text must parse
+     * back to the row it was paired with.
+     */
+    public function testSourceTextStaysAlignedWithParsedRowsOnRandomInput(): void
+    {
+        mt_srand(20261016);
+
+        $pieces = ['a', 'b', '1', ',', ',', '"', '"', ' ', "\t", "\n", "\n", "\r\n", 'é', '日', '\\'];
+        $probe  = new class ('', Parser::SOURCE_STRING) extends Parser {
+            public function __construct(string $source, string $sourceType, ?RecordFactory $recordFactory = null)
+            {
+                parent::__construct($source, $sourceType, $recordFactory);
+            }
+
+            public function withSource(string $source): self
+            {
+                return new self($source, self::SOURCE_STRING);
+            }
+
+            /**
+             * @return array{int, int} Records League\Csv finds, records found in the source text
+             */
+            public function counts(): array
+            {
+                $reader = $this->createCsvReader();
+
+                return [
+                    iterator_count($reader->getRecords()),
+                    iterator_count($this->rawRecords($reader->getInputBOM())),
+                ];
+            }
+        };
+
+        for ($i = 0; $i < 1500; ++$i) {
+            $csv = "h1,h2\n";
+
+            for ($j = 0, $length = mt_rand(1, 45); $j < $length; ++$j) {
+                $csv .= $pieces[mt_rand(0, count($pieces) - 1)];
+            }
+
+            $this->assertSame(
+                $probe->withSource($csv)->counts()[0],
+                $probe->withSource($csv)->counts()[1],
+                'Different record counts for ' . json_encode($csv)
+            );
+
+            $records = $this->parseWithLines($csv);
+            $last    = count($records) - 1;
+
+            foreach ($records as $index => [$row, $text]) {
+                // The last record may end inside an open quote, which loses its trailing newline.
+                if ($index !== $last) {
+                    $this->assertSame($row, str_getcsv($text, ',', '"', ''), 'Misaligned record in ' . json_encode($csv));
+                }
+            }
+        }
     }
 
     public function testFileWithoutBomIsParsed(): void
