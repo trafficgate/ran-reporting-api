@@ -1,59 +1,56 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkshare\Api\RanReporting;
 
+use Generator;
 use League\Csv\Reader as CsvReader;
+use Psr\Http\Message\ResponseInterface;
 use SplFileObject;
 use SplTempFileObject;
+use Stringable;
 
 class Parser
 {
     public const SOURCE_STRING = 'string';
     public const SOURCE_PATH   = 'path';
 
-    protected $source;
-    protected $sourceType;
-    protected $recordFactory;
+    protected RecordFactory $recordFactory;
 
     protected function __construct(
-        $source,
-        $sourceType,
+        protected string $source,
+        protected string $sourceType,
         ?RecordFactory $recordFactory = null
     ) {
-        if (! isset($recordFactory)) {
-            $recordFactory = new ArrayFactory();
-        }
-
-        $this->source        = $source;
-        $this->sourceType    = $sourceType;
-        $this->recordFactory = $recordFactory;
+        $this->recordFactory = $recordFactory ?? new ArrayFactory();
     }
 
     public static function createFromResponse(
-        $response,
+        ResponseInterface $response,
         ?RecordFactory $recordFactory = null
-    ) {
+    ): static {
         return static::createFromString(
-            $response->getBody(),
+            (string) $response->getBody(),
             $recordFactory
         );
     }
 
     public static function createFromString(
-        $string,
+        string|Stringable $string,
         ?RecordFactory $recordFactory = null
-    ) {
-        return new static($string, self::SOURCE_STRING, $recordFactory);
+    ): static {
+        return new static((string) $string, self::SOURCE_STRING, $recordFactory);
     }
 
     public static function createFromPath(
-        $path,
+        string $path,
         ?RecordFactory $recordFactory = null
-    ) {
+    ): static {
         return new static($path, self::SOURCE_PATH, $recordFactory);
     }
 
-    public function getHeader()
+    public function getHeader(): mixed
     {
         $csvReader  = $this->createCsvReader();
         $sourceFile = $this->createFileObject();
@@ -69,7 +66,7 @@ class Parser
         return $this->recordFactory->create($row, $line);
     }
 
-    public function parse()
+    public function parse(): Generator
     {
         $csvReader  = $this->createCsvReader();
         $sourceFile = $this->createFileObject();
@@ -78,7 +75,7 @@ class Parser
             $line = $sourceFile->fgets();
             $line = $this->stripNewline($line);
 
-            if ($offset == 0) {
+            if ($offset === 0) {
                 // Skip the first line (header)
                 continue;
             }
@@ -87,43 +84,42 @@ class Parser
         }
     }
 
-    protected function createCsvReader()
+    protected function createCsvReader(): CsvReader
     {
-        $csvReader = null;
-
-        if ($this->sourceType === self::SOURCE_STRING) {
-            $csvReader = CsvReader::createFromString($this->source);
-        } elseif ($this->sourceType === self::SOURCE_PATH) {
-            $csvReader = CsvReader::createFromPath($this->source);
-        }
+        $csvReader = match ($this->sourceType) {
+            self::SOURCE_STRING => CsvReader::createFromString($this->source),
+            self::SOURCE_PATH   => CsvReader::createFromPath($this->source),
+        };
 
         $csvReader->skipInputBOM();
 
         return $csvReader;
     }
 
-    protected function createFileObject()
+    protected function createFileObject(): SplFileObject
     {
-        $sourceFile = null;
+        return match ($this->sourceType) {
+            self::SOURCE_STRING => $this->createTempFileObject(),
+            self::SOURCE_PATH   => new SplFileObject($this->source),
+        };
+    }
 
-        if ($this->sourceType === self::SOURCE_STRING) {
-            $sourceFile = new SplTempFileObject();
+    protected function createTempFileObject(): SplTempFileObject
+    {
+        $sourceFile = new SplTempFileObject();
 
-            $sourceFile->fwrite($this->source);
-            $sourceFile->rewind();
-        } elseif ($this->sourceType === self::SOURCE_PATH) {
-            $sourceFile = new SplFileObject($this->source);
-        }
+        $sourceFile->fwrite($this->source);
+        $sourceFile->rewind();
 
         return $sourceFile;
     }
 
-    protected function stripNewline(string $line)
+    protected function stripNewline(string $line): string
     {
         return rtrim($line, "\n\r");
     }
 
-    protected function stripBom(string $line, string $bom)
+    protected function stripBom(string $line, string $bom): string
     {
         return mb_substr($line, mb_strlen($bom));
     }

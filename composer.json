@@ -14,15 +14,17 @@
     }
   ],
   "require": {
-    "php": "^7.2|^8.0",
-    "guzzlehttp/guzzle": "^6.1.1|^7.0",
-    "league/csv": "^9.4"
+    "php": "^8.2",
+    "ext-mbstring": "*",
+    "guzzlehttp/guzzle": "^7.8",
+    "league/csv": "^9.15",
+    "psr/http-message": "^1.1|^2.0"
   },
   "require-dev": {
-    "fakerphp/faker": "^1.9",
-    "friendsofphp/php-cs-fixer": "^3.0",
-    "phpunit/phpunit": "^8.5.14|^9.0",
-    "psy/psysh": "^0.11.20"
+    "fakerphp/faker": "^1.23",
+    "friendsofphp/php-cs-fixer": "^3.50",
+    "phpunit/phpunit": "^11.0",
+    "psy/psysh": "^0.12"
   },
   "autoload": {
     "psr-4": {
@@ -36,7 +38,7 @@
   },
   "extra": {
     "branch-alias": {
-      "dev-master": "2.0.x-dev"
+      "dev-master": "3.0.x-dev"
     }
   },
   "minimum-stability": "stable",

@@ -10,9 +10,10 @@ This library helps you:
 
 ## Requirements
 
-- PHP 7.2 or later (tested through 8.2)
-- [guzzlehttp/guzzle](https://github.com/guzzle/guzzle) `^6.1.1 | ^7.0`
-- [league/csv](https://csv.thephpleague.com/) `^9.4`
+- PHP 8.2 or later (tested through 8.5)
+- `ext-mbstring`
+- [guzzlehttp/guzzle](https://github.com/guzzle/guzzle) `^7.8`
+- [league/csv](https://csv.thephpleague.com/) `^9.15`
 
 ## Installation
 
@@ -85,7 +86,7 @@ $downloader->download();
 $path = $downloader->getSinkPath();
 ```
 
-The file name prefix is optional and defaults to `report-`.
+The file name prefix is optional and defaults to `report-`. The directory must exist and be writable, otherwise an `InvalidArgumentException` is thrown.
 
 The temporary file is **deleted when the `Downloader` is destroyed**. Keep the `Downloader` in scope until you've finished reading `getSinkPath()`, or copy the file somewhere else first.
 

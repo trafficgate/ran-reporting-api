@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkshare\Api\RanReporting\SignatureOrders;
 
 class Transaction
@@ -17,21 +19,20 @@ class Transaction
     public const PROCESS_DATE     = 10;
     public const PROCESS_TIME     = 11;
 
-    protected $memberId;
-    protected $mid;
-    protected $advertiserName;
-    protected $orderId;
-    protected $transactionDate;
-    protected $transactionTime;
-    protected $sku;
-    protected $sales;
-    protected $numberOfItems;
-    protected $totalCommission;
-    protected $processDate;
-    protected $processTime;
-    protected $originalString;
+    protected readonly string $memberId;
+    protected readonly string $mid;
+    protected readonly string $advertiserName;
+    protected readonly string $orderId;
+    protected readonly string $transactionDate;
+    protected readonly string $transactionTime;
+    protected readonly string $sku;
+    protected readonly string $sales;
+    protected readonly string $numberOfItems;
+    protected readonly string $totalCommission;
+    protected readonly string $processDate;
+    protected readonly string $processTime;
 
-    public function __construct(array $data, string $originalString)
+    public function __construct(array $data, protected readonly string $originalString)
     {
         $this->memberId        = $data[self::MEMBER_ID];
         $this->mid             = $data[self::MID];
@@ -45,70 +46,69 @@ class Transaction
         $this->totalCommission = $data[self::TOTAL_COMMISSION];
         $this->processDate     = $data[self::PROCESS_DATE];
         $this->processTime     = $data[self::PROCESS_TIME];
-        $this->originalString  = $originalString;
     }
 
-    public function memberId()
+    public function memberId(): string
     {
         return $this->memberId;
     }
 
-    public function mid()
+    public function mid(): string
     {
         return $this->mid;
     }
 
-    public function advertiserName()
+    public function advertiserName(): string
     {
         return $this->advertiserName;
     }
 
-    public function orderId()
+    public function orderId(): string
     {
         return $this->orderId;
     }
 
-    public function transactionDate()
+    public function transactionDate(): string
     {
         return $this->transactionDate;
     }
 
-    public function transactionTime()
+    public function transactionTime(): string
     {
         return $this->transactionTime;
     }
 
-    public function sku()
+    public function sku(): string
     {
         return $this->sku;
     }
 
-    public function sales()
+    public function sales(): string
     {
         return $this->sales;
     }
 
-    public function numberOfItems()
+    public function numberOfItems(): string
     {
         return $this->numberOfItems;
     }
 
-    public function totalCommission()
+    public function totalCommission(): string
     {
         return $this->totalCommission;
     }
 
-    public function processDate()
+    public function processDate(): string
     {
         return $this->processDate;
     }
 
-    public function processTime()
+    public function processTime(): string
     {
         return $this->processTime;
     }
 
-    public function originalString()
+    public function originalString(): string
     {
         return $this->originalString;
     }

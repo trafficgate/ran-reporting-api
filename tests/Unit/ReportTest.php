@@ -1,9 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkshare\Api\RanReporting\Tests\Unit;
 
+use BadMethodCallException;
+use InvalidArgumentException;
 use Linkshare\Api\RanReporting\Report;
 use Linkshare\Api\RanReporting\Tests\TestCase;
+use TypeError;
 
 class ReportTest extends TestCase
 {
@@ -66,5 +71,39 @@ class ReportTest extends TestCase
             'https://ran-reporting.rakutenmarketing.com/en/reports/signature-orders-report/filters?start_date=2016-08-01&end_date=2016-08-22&include_summary=N&network=1&tz=GMT&date_type=process&token=TOKEN',
             $report->getUri()
         );
+    }
+
+    public function testGetUriThrowsWhenPropertyIsNotSet(): void
+    {
+        $report = new Report([
+            'language'   => Report::LANGUAGE_EN,
+            'reportName' => 'signature-orders-report',
+        ]);
+
+        $this->expectException(BadMethodCallException::class);
+        $this->expectExceptionMessage('startDate is not set.');
+
+        $report->getUri();
+    }
+
+    public function testSetIncludeSummaryRejectsInvalidValue(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        (new Report())->setIncludeSummary('X');
+    }
+
+    public function testSetDateTypeRejectsInvalidValue(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        (new Report())->setDateType('invalid');
+    }
+
+    public function testSettersRejectWrongScalarTypes(): void
+    {
+        $this->expectException(TypeError::class);
+
+        (new Report())->setNetwork('1');
     }
 }

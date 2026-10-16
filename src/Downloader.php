@@ -1,52 +1,60 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkshare\Api\RanReporting;
 
 use GuzzleHttp\Client;
+use InvalidArgumentException;
+use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 
 class Downloader
 {
     public const DEFAULT_SINK_PREFIX = 'report-';
 
-    /**
-     * @var Report
-     */
-    protected $report;
+    protected ?string $sinkPath = null;
 
-    /**
-     * @var string
-     */
-    protected $sinkPath;
-
-    /**
-     * @var Psr\Http\Message\ResponseInterface
-     */
-    protected $response;
+    protected ?ResponseInterface $response = null;
 
     public function __construct(
-        Report $report,
+        protected Report $report,
         ?string $sinkDir = null,
         string $sinkPrefix = self::DEFAULT_SINK_PREFIX
     ) {
-        $this->report = $report;
-
-        if (isset($sinkDir)) {
-            $this->sinkPath = tempnam($sinkDir, $sinkPrefix);
+        if ($sinkDir === null) {
+            return;
         }
+
+        if (! is_dir($sinkDir) || ! is_writable($sinkDir)) {
+            throw new InvalidArgumentException(
+                $sinkDir . ' is not a writable directory.'
+            );
+        }
+
+        $sinkPath = tempnam($sinkDir, $sinkPrefix);
+
+        if ($sinkPath === false) {
+            throw new RuntimeException(
+                'Unable to create a temporary file in ' . $sinkDir . '.'
+            );
+        }
+
+        $this->sinkPath = $sinkPath;
     }
 
     public function __destruct()
     {
-        if (isset($this->sinkPath)) {
+        if (isset($this->sinkPath) && file_exists($this->sinkPath)) {
             unlink($this->sinkPath);
         }
     }
 
-    public function download(array $options = [])
+    public function download(array $options = []): ResponseInterface
     {
-        $defaultOptions = [
-            'sink' => $this->sinkPath,
-        ];
+        $defaultOptions = isset($this->sinkPath)
+            ? ['sink' => $this->sinkPath]
+            : [];
 
         $client = new Client(array_merge($defaultOptions, $options));
 
@@ -55,12 +63,12 @@ class Downloader
         return $this->response;
     }
 
-    public function getResponse()
+    public function getResponse(): ?ResponseInterface
     {
         return $this->response;
     }
 
-    public function getSinkPath()
+    public function getSinkPath(): ?string
     {
         return $this->sinkPath;
     }
