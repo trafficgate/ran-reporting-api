@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- `Parser` follows RFC 4180 quoting: a backslash is an ordinary character, so `\"` no longer escapes a quote. This keeps parsed rows and their source text aligned.
+- `Parser` follows RFC 4180 quoting: a backslash is an ordinary character, so `\"` no longer escapes a quote. A quote opens a quoted field only at the start of a field, as in PHP's own CSV reader, so a stray quote inside an unquoted field is ordinary text. This keeps parsed rows and their source text aligned.
 - `Transaction` throws an `InvalidArgumentException` (without quoting the row) if a row has fewer than 12 columns or a column is not a string, instead of failing on an undefined array key or a `TypeError`.
 - `RecordFactory::create()` and the `Parser` document their types for static analysis: `Parser::parse()` is a `Generator<int, mixed>`, and `Downloader::download()` declares the exceptions it throws.
 - Exceptions thrown by `Downloader::download()` now carry a copy of the response with the token removed from its headers and body.

@@ -152,7 +152,7 @@ foreach ($parser->parse() as $record) {
 }
 ```
 
-A leading UTF-8 byte order mark is handled for you. Parsing follows RFC 4180: a quote inside a quoted field is written as two quotes, a backslash is an ordinary character, quoted fields may contain line breaks, and blank lines are skipped.
+A leading UTF-8 byte order mark is handled for you. Parsing follows RFC 4180: a quote inside a quoted field is written as two quotes, a backslash is an ordinary character, quoted fields may contain line breaks, and blank lines are skipped. A quote only opens a quoted field at the start of a field, so a stray quote elsewhere, as in `Pipes 5" Inc`, is ordinary text.
 
 #### Record formats
 
