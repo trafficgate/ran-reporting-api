@@ -18,7 +18,7 @@ vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff   #
 php scripts/fake_report_generator.php                # regenerate tests/data/signature-orders.csv
 ```
 
-CI runs PHPUnit 11 on PHP 8.2–8.5 with both `prefer-lowest` and `prefer-stable`, so dependency changes must work at the lowest allowed versions (Guzzle 7.8, league/csv 9.15). A separate workflow runs php-cs-fixer on every push and auto-commits fixes.
+CI runs PHPUnit 11 on PHP 8.2–8.5 with both `prefer-lowest` and `prefer-stable`, so dependency changes must work at the lowest allowed versions (Guzzle 7.8, league/csv 9.27). A separate workflow runs php-cs-fixer on every push and auto-commits fixes.
 
 `composer.lock` and `phpunit.xml` are gitignored. Local PHPUnit overrides go in `phpunit.xml`.
 
@@ -27,7 +27,8 @@ CI runs PHPUnit 11 on PHP 8.2–8.5 with both `prefer-lowest` and `prefer-stable
 The flow is three independent steps: `Report` builds the URL, `Downloader` fetches it, and `Parser` turns the CSV into records.
 
 - **`Report`** is a fluent builder for the report URL. Its constructor takes an array keyed by `VALID_PROPERTY_NAMES` and calls the matching `setX()` methods. `getUri()` throws `BadMethodCallException` unless **every** property in `VALID_PROPERTY_NAMES` is set, including `reportName` and `token`. Report-specific subclasses (e.g. `SignatureOrders`) work by presetting `$reportName`. A new report type should follow that pattern.
-- **`Downloader`** wraps a Guzzle client. If given a `$sinkDir`, it streams the response to a `tempnam()` file, and `__destruct()` **deletes that file**. Keep the `Downloader` alive for as long as you read from `getSinkPath()`.
+- **`Downloader`** takes an injectable `GuzzleHttp\ClientInterface` and default Guzzle request options (proxy, verify, timeout). `download($destination)` retries transient failures per `RetryPolicy`, writes to a temp file beside the destination, and `rename()`s it into place only on success. It never deletes the file afterwards.
+- **Token handling is the critical invariant.** RAN takes the token in the query string and Guzzle quotes the whole URL in exception messages, requests, handler context and previous exceptions. `Downloader::send()` is the single outermost boundary: every exception leaving it goes through `TokenRedactor::redact()`, which rebuilds the Guzzle exception (same class, no previous). Do not catch-and-rethrow raw Guzzle exceptions elsewhere, do not put `getUri()` in messages or logs (use `getRedactedUri()`), and keep `testExceptionsNeverContainTheToken` passing.
 - **`Parser`** is built through the static `createFromResponse/String/Path` factories (the constructor is protected). `parse()` is a generator that skips the header row. `getHeader()` returns just the header.
 - **`RecordFactory`** is the extension point for record shape. The `Parser` calls `create(array $row, string $line)` for every record. `ArrayFactory` is the default and returns the raw row. Per-report factories, such as `SignatureOrders\TransactionFactory`, return value objects and keep the original raw line (`originalString()`).
 

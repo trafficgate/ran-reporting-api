@@ -106,4 +106,48 @@ class ReportTest extends TestCase
 
         (new Report())->setNetwork('1');
     }
+
+    public function testGetRedactedUriMasksTheToken(): void
+    {
+        $report = $this->createCompleteReport('SECRET-TOKEN');
+
+        $this->assertStringContainsString('token=SECRET-TOKEN', $report->getUri());
+        $this->assertStringNotContainsString('SECRET-TOKEN', $report->getRedactedUri());
+        $this->assertStringEndsWith('&token=REDACTED', $report->getRedactedUri());
+    }
+
+    public function testGetRedactedUriThrowsWhenPropertyIsNotSet(): void
+    {
+        $this->expectException(BadMethodCallException::class);
+
+        (new Report())->getRedactedUri();
+    }
+
+    public function testDumpingAReportDoesNotRevealTheToken(): void
+    {
+        $report = $this->createCompleteReport('SECRET-TOKEN');
+
+        ob_start();
+        var_dump($report);
+        print_r($report);
+        $output = ob_get_clean();
+
+        $this->assertStringNotContainsString('SECRET-TOKEN', $output);
+        $this->assertStringContainsString('REDACTED', $output);
+        $this->assertSame('SECRET-TOKEN', $report->getToken());
+    }
+
+    protected function createCompleteReport(string $token): Report
+    {
+        return new Report([
+            'language'   => Report::LANGUAGE_EN,
+            'reportName' => 'signature-orders-report',
+            'startDate'  => '2016-08-01',
+            'endDate'    => '2016-08-22',
+            'network'    => Report::NETWORK_US,
+            'timezone'   => Report::TIMEZONE_GMT,
+            'dateType'   => Report::DATE_TYPE_PROCESS,
+            'token'      => $token,
+        ]);
+    }
 }
