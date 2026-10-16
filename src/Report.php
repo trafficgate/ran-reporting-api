@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkshare\Api\RanReporting;
 
 use BadMethodCallException;
@@ -35,15 +37,15 @@ class Report
         'token',
     ];
 
-    protected $language;
-    protected $reportName;
-    protected $startDate;
-    protected $endDate;
-    protected $includeSummary = self::INCLUDE_SUMMARY_NO;
-    protected $network;
-    protected $timezone;
-    protected $dateType;
-    protected $token;
+    protected ?string $language      = null;
+    protected ?string $reportName    = null;
+    protected ?string $startDate     = null;
+    protected ?string $endDate       = null;
+    protected string $includeSummary = self::INCLUDE_SUMMARY_NO;
+    protected ?int $network          = null;
+    protected ?string $timezone      = null;
+    protected ?string $dateType      = null;
+    protected ?string $token         = null;
 
     public function __construct(array $props = [])
     {
@@ -56,60 +58,60 @@ class Report
         }
     }
 
-    public function getLanguage()
+    public function getLanguage(): ?string
     {
         return $this->language;
     }
 
-    public function setLanguage(string $value)
+    public function setLanguage(string $value): static
     {
         $this->language = $value;
 
         return $this;
     }
 
-    public function getReportName()
+    public function getReportName(): ?string
     {
         return $this->reportName;
     }
 
-    public function setReportName(string $value)
+    public function setReportName(string $value): static
     {
         $this->reportName = $value;
 
         return $this;
     }
 
-    public function getStartDate()
+    public function getStartDate(): ?string
     {
         return $this->startDate;
     }
 
-    public function setStartDate(string $value)
+    public function setStartDate(string $value): static
     {
         $this->startDate = $value;
 
         return $this;
     }
 
-    public function getEndDate()
+    public function getEndDate(): ?string
     {
         return $this->endDate;
     }
 
-    public function setEndDate(string $value)
+    public function setEndDate(string $value): static
     {
         $this->endDate = $value;
 
         return $this;
     }
 
-    public function getIncludeSummary()
+    public function getIncludeSummary(): string
     {
         return $this->includeSummary;
     }
 
-    public function setIncludeSummary(string $value)
+    public function setIncludeSummary(string $value): static
     {
         $validValues = [
             self::INCLUDE_SUMMARY_YES,
@@ -127,36 +129,36 @@ class Report
         return $this;
     }
 
-    public function getNetwork()
+    public function getNetwork(): ?int
     {
         return $this->network;
     }
 
-    public function setNetwork(int $value)
+    public function setNetwork(int $value): static
     {
         $this->network = $value;
 
         return $this;
     }
 
-    public function getTimezone()
+    public function getTimezone(): ?string
     {
         return $this->timezone;
     }
 
-    public function setTimezone(string $value)
+    public function setTimezone(string $value): static
     {
         $this->timezone = $value;
 
         return $this;
     }
 
-    public function getDateType()
+    public function getDateType(): ?string
     {
         return $this->dateType;
     }
 
-    public function setDateType(string $value)
+    public function setDateType(string $value): static
     {
         $validValues = [
             self::DATE_TYPE_TRANSACTION,
@@ -174,19 +176,19 @@ class Report
         return $this;
     }
 
-    public function getToken()
+    public function getToken(): ?string
     {
         return $this->token;
     }
 
-    public function setToken(string $value)
+    public function setToken(string $value): static
     {
         $this->token = $value;
 
         return $this;
     }
 
-    public function getUri()
+    public function getUri(): string
     {
         foreach (self::VALID_PROPERTY_NAMES as $name) {
             if (! isset($this->{$name})) {

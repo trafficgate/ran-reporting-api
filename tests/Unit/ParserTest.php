@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkshare\Api\RanReporting\Tests\Unit;
 
+use GuzzleHttp\Psr7\Response;
 use Linkshare\Api\RanReporting\Parser;
 use Linkshare\Api\RanReporting\SignatureOrders\TransactionFactory;
 use Linkshare\Api\RanReporting\Tests\TestCase;
@@ -102,6 +105,21 @@ class ParserTest extends TestCase
             'Member ID (U1),MID,Advertiser Name,Order ID,Transaction Date,Transaction Time,SKU,Sales,# of Items,Total Commission,Process Date,Process Time',
             $header->originalString()
         );
+    }
+
+    public function testCreateParserFromResponse(): void
+    {
+        $response = new Response(200, [], $this->createSampleReportStream());
+        $parser   = Parser::createFromResponse(
+            $response,
+            new TransactionFactory()
+        );
+        $records         = $parser->parse();
+        $record          = $records->current();
+        $numberOfRecords = iterator_count($records);
+
+        $this->assertEquals('4983949625568', $record->memberId());
+        $this->assertEquals(1532, $numberOfRecords);
     }
 
     public function testCreateParserFromPath(): void

@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkshare\Api\RanReporting\Tests\Unit;
 
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use InvalidArgumentException;
 use Linkshare\Api\RanReporting\Downloader;
 use Linkshare\Api\RanReporting\Report;
 use Linkshare\Api\RanReporting\SignatureOrders;
@@ -13,20 +16,16 @@ use Linkshare\Api\RanReporting\Tests\TestCase;
 
 class DownloaderTest extends TestCase
 {
-    public const SINK_DIR = __DIR__ . '/../../tmp';
+    protected string $sinkDir;
+    protected Report $report;
+    protected array $history;
+    protected mixed $mockResponseBody;
+    protected HandlerStack $mockHandler;
 
-    protected $report;
-    protected $history;
-    protected $mockResponseBody;
-    protected $mockHandler;
-
-    public function setUp(): void
+    protected function setUp(): void
     {
-        if (! file_exists(self::SINK_DIR)) {
-            mkdir(self::SINK_DIR, 0777, true);
-        }
-
-        $this->report = new SignatureOrders([
+        $this->sinkDir = sys_get_temp_dir();
+        $this->report  = new SignatureOrders([
             'language'  => Report::LANGUAGE_EN,
             'startDate' => '2016-05-01',
             'endDate'   => '2016-07-31',
@@ -63,7 +62,7 @@ class DownloaderTest extends TestCase
 
     public function testDownloadWithSinkDir(): void
     {
-        $downloader = new Downloader($this->report, self::SINK_DIR);
+        $downloader = new Downloader($this->report, $this->sinkDir);
         $downloader->download([
             'handler' => $this->mockHandler,
         ]);
@@ -78,7 +77,7 @@ class DownloaderTest extends TestCase
     {
         $downloader = new Downloader(
             $this->report,
-            self::SINK_DIR,
+            $this->sinkDir,
             'prefix-'
         );
         $downloader->download([
@@ -93,13 +92,39 @@ class DownloaderTest extends TestCase
 
     public function testSinkFileIsDeleted(): void
     {
-        $downloader = new Downloader($this->report, self::SINK_DIR);
+        $downloader = new Downloader($this->report, $this->sinkDir);
         $sinkPath   = $downloader->getSinkPath();
 
         $this->assertFileExists($sinkPath);
 
         unset($downloader);
 
-        $this->assertFileNotExists($sinkPath);
+        $this->assertFileDoesNotExist($sinkPath);
+    }
+
+    public function testDestructorToleratesMissingSinkFile(): void
+    {
+        $downloader = new Downloader($this->report, $this->sinkDir);
+        $sinkPath   = $downloader->getSinkPath();
+
+        unlink($sinkPath);
+        unset($downloader);
+
+        $this->assertFileDoesNotExist($sinkPath);
+    }
+
+    public function testSinkDirMustBeAnExistingDirectory(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new Downloader($this->report, $this->sinkDir . '/does-not-exist');
+    }
+
+    public function testSinkPathIsNullWithoutSinkDir(): void
+    {
+        $downloader = new Downloader($this->report);
+
+        $this->assertNull($downloader->getSinkPath());
+        $this->assertNull($downloader->getResponse());
     }
 }
