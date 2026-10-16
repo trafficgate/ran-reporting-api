@@ -34,11 +34,13 @@ The flow is three independent steps: `Report` builds the URL, `Downloader` fetch
 
 ### Parser detail worth knowing
 
-For each record the `Parser` reads two views of the same source in lockstep: a `League\Csv\Reader` for the parsed row and an `SplFileObject`/`SplTempFileObject` for the raw line. The raw line is passed to the `RecordFactory`. The BOM is stripped from both views (`skipInputBOM()` on the reader, `stripBom()` on the header line). Changes to parsing must keep the two in sync.
+For each record the `Parser` pairs two views of the same source: the row parsed by `League\Csv\Reader` and the record's raw text from `rawRecords()`. The raw text is passed to the `RecordFactory`. A record is not always one line (quoted fields may contain newlines) and blank lines are skipped, so `rawRecords()` joins physical lines until the quotes balance and skips blank ones, in the same way League does. That only holds under RFC 4180 quoting, which is why `createCsvReader()` calls `setEscape('')`. If you change how either side splits records, keep them aligned and keep the alignment tests in `ParserTest` passing. The BOM is removed from both sides.
 
 `SignatureOrders\Transaction` maps CSV columns by numeric index constants, so the column order in the report defines the class. The sample fixture (`tests/data/signature-orders.csv`) is generated with fake data by `scripts/fake_report_generator.php`, which writes a UTF-8 BOM and CRLF line endings to mimic the real API. `ParserTest` asserts exactly 1532 records, so regenerating the fixture with a different row count breaks the tests.
+
+`tests/Integration/DownloaderHttpTest.php` runs `Downloader` over real HTTP against `php -S` with `tests/Integration/router.php` (a different scenario per URL prefix), so redaction is checked against real cURL errors and real responses. Run it with the normal suite. It skips itself if a local server cannot be started. Don't start `php -S` with `PHP_CLI_SERVER_WORKERS`: the workers survive `proc_terminate()` and keep PHPUnit's output pipe open, which hangs `phpunit | tail`.
 
 ## Conventions
 
 - Follow `CHANGELOG.md` (Keep a Changelog format) and add entries under `[Unreleased]`.
-- `composer.json` declares a `branch-alias` for `dev-master` (`2.0.x-dev`). Update it when cutting a new major or minor version.
+- `composer.json` declares a `branch-alias` for `dev-master` (`3.0.x-dev`). Update it when cutting a new major or minor version.

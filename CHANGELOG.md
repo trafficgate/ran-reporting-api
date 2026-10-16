@@ -10,16 +10,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Native parameter, return, and property types throughout, with `declare(strict_types=1)` in every file.
-- `ext-mbstring` and `psr/http-message` as explicit requirements.
+- `psr/http-message` and `guzzlehttp/psr7` as explicit requirements, since the library uses them directly.
 - `Downloader` accepts an injectable `GuzzleHttp\ClientInterface` and default Guzzle request options (`proxy`, `verify`, `timeout`, ...), so it can be tested with a mock handler.
 - `RetryPolicy`: `Downloader` retries connection errors, timeouts, HTTP 5xx and HTTP 429 with exponential backoff and jitter (5 attempts by default). Other failures such as a 403 are not retried.
 - The API token is removed from exceptions thrown by `Downloader::download()`. They keep their Guzzle class, response and status code, but the message, request, handler context and previous exception no longer contain the token.
 - `Report::getRedactedUri()`, and `var_dump()` / `print_r()` of a `Report` hide the token.
 - `Downloader::download($destination)` writes to a temporary file and moves it into place only on success, so a failed download never replaces or truncates an existing file.
-- Tests for invalid setter values, missing report settings, wrong scalar types, `Parser::createFromResponse()`, retries, atomic downloads, and token redaction.
+- Tests for invalid setter values, missing report settings, wrong scalar types, `Parser::createFromResponse()`, retries, atomic downloads, token redaction, and parsing of blank lines, multi-line fields, and malformed rows. Integration tests run `Downloader` over real HTTP against PHP's built-in web server.
 
 ### Changed
 
+- `Parser` follows RFC 4180 quoting: a backslash is an ordinary character, so `\"` no longer escapes a quote. This keeps parsed rows and their source text aligned.
+- `Transaction` throws an `InvalidArgumentException` (without quoting the row) if a row has fewer than 12 columns, instead of failing on an undefined array key.
+- Exceptions thrown by `Downloader::download()` now carry a copy of the response with the token removed from its headers and body.
 - Minimum supported PHP version (`^7.2|^8.0` => `^8.2`).
 - Minimum supported versions for dependencies.
   - guzzlehttp/guzzle (`^6.1.1|^7.0` => `^7.8`)
@@ -38,6 +41,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Support for PHP < 8.2 and Guzzle 6.
 - `Downloader::getSinkPath()` and the temporary sink file that was deleted when the `Downloader` was destroyed. Pass a destination to `download()` instead.
+
+### Fixed
+
+- `Parser` paired records with the wrong `originalString()` when the source had blank lines or quoted fields containing line breaks, and treated the header as a data record when blank lines came before it. Each record now gets its own complete source text.
 
 ## [2.0.1] - 2026-10-16
 
