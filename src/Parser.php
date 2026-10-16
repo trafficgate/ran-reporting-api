@@ -55,7 +55,7 @@ class Parser
         $csvReader  = $this->createCsvReader();
         $sourceFile = $this->createFileObject();
         $inputBom   = $csvReader->getInputBOM();
-        $row        = $csvReader->fetchOne();
+        $row        = $csvReader->first();
         $line       = $sourceFile->fgets();
         $line       = $this->stripNewline($line);
 
@@ -87,8 +87,8 @@ class Parser
     protected function createCsvReader(): CsvReader
     {
         $csvReader = match ($this->sourceType) {
-            self::SOURCE_STRING => CsvReader::createFromString($this->source),
-            self::SOURCE_PATH   => CsvReader::createFromPath($this->source),
+            self::SOURCE_STRING => CsvReader::fromString($this->source),
+            self::SOURCE_PATH   => CsvReader::from($this->source),
         };
 
         $csvReader->skipInputBOM();

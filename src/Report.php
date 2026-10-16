@@ -22,6 +22,8 @@ class Report
 
     public const TIMEZONE_GMT = 'GMT';
 
+    public const REDACTED_TOKEN = 'REDACTED';
+
     public const DATE_TYPE_TRANSACTION = 'transaction';
     public const DATE_TYPE_PROCESS     = 'process';
 
@@ -56,6 +58,20 @@ class Report
                 $this->{$method}($props[$name]);
             }
         }
+    }
+
+    /**
+     * Keep the token out of var_dump() and print_r() output.
+     */
+    public function __debugInfo(): array
+    {
+        $properties = get_object_vars($this);
+
+        if (isset($properties['token'])) {
+            $properties['token'] = self::REDACTED_TOKEN;
+        }
+
+        return $properties;
     }
 
     public function getLanguage(): ?string
@@ -190,6 +206,19 @@ class Report
 
     public function getUri(): string
     {
+        return $this->buildUri($this->token);
+    }
+
+    /**
+     * Same as getUri() but with the token masked, so it is safe to log.
+     */
+    public function getRedactedUri(): string
+    {
+        return $this->buildUri(self::REDACTED_TOKEN);
+    }
+
+    protected function buildUri(?string $token): string
+    {
         foreach (self::VALID_PROPERTY_NAMES as $name) {
             if (! isset($this->{$name})) {
                 throw new BadMethodCallException($name . ' is not set.');
@@ -209,7 +238,7 @@ class Report
             'network'         => $this->network,
             'tz'              => $this->timezone,
             'date_type'       => $this->dateType,
-            'token'           => $this->token,
+            'token'           => $token,
         ]);
 
         return $uri . '?' . $queryString;
